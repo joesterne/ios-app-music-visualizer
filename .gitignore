@@ -1,0 +1,20 @@
+# Xcode
+build/
+DerivedData/
+*.swp
+*.lock
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+user. Xcode
+*.xcuserstate
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+*.xcuserstate
+
+# Swift Package Manager
+.build/
+
+# macOS
+.DS_Store
