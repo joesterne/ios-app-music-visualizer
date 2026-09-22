@@ -134,6 +134,12 @@
 			"path" = "StudioView.swift";
 			"sourceTree" = "<group>";
 		};
+		"EE088F080B29E4F59EFD104B" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "TronControls.swift";
+			"sourceTree" = "<group>";
+		};
 		"58492F208780FA5EF3807E8F" = {
 			"isa" = "PBXGroup";
 			"children" = (
@@ -141,8 +147,27 @@
 				"3DC393324188ABC3F35F5940",
 				"B42851FA976C472CBCD85DCB",
 				"09CEE40A8D08E0C4DCA9575E",
+				"EE088F080B29E4F59EFD104B",
 			);
 			"path" = "Views";
+			"sourceTree" = "<group>";
+		};
+		"43486110E4F287F3940B2A41" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "TronGeometry.swift";
+			"sourceTree" = "<group>";
+		};
+		"0B2392DDDC9CD0673E49ECB3" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "TronRenderer.swift";
+			"sourceTree" = "<group>";
+		};
+		"B1C6A37368071DAD690F77D2" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "TronSettings.swift";
 			"sourceTree" = "<group>";
 		};
 		"AF2F9FAE3498AAE605A680C9" = {
@@ -154,6 +179,9 @@
 		"CF190A364FA098B9AE538E0B" = {
 			"isa" = "PBXGroup";
 			"children" = (
+				"43486110E4F287F3940B2A41",
+				"0B2392DDDC9CD0673E49ECB3",
+				"B1C6A37368071DAD690F77D2",
 				"AF2F9FAE3498AAE605A680C9",
 			);
 			"path" = "Visualizers";
@@ -221,10 +249,17 @@
 			"path" = "test_dsp.c";
 			"sourceTree" = "<group>";
 		};
+		"C336E8C0CC3E7690FB478CC6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "test_tron.swift";
+			"sourceTree" = "<group>";
+		};
 		"156052F04525D0F710673CF0" = {
 			"isa" = "PBXGroup";
 			"children" = (
 				"7F41AFBEEC0C473DC5118647",
+				"C336E8C0CC3E7690FB478CC6",
 			);
 			"path" = "Tests";
 			"sourceTree" = "<group>";
@@ -247,12 +282,19 @@
 			"path" = "test-dsp.sh";
 			"sourceTree" = "<group>";
 		};
+		"F0ACBBC806A9760A9E573BA4" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.script.sh";
+			"path" = "test-tron.sh";
+			"sourceTree" = "<group>";
+		};
 		"C3BBE33D2D6E650AB8728D33" = {
 			"isa" = "PBXGroup";
 			"children" = (
 				"AE1684C82182F9BE4AA28229",
 				"5B30501474823BC3AC50EC3F",
 				"09CB94EE04721F25DFFC8D41",
+				"F0ACBBC806A9760A9E573BA4",
 			);
 			"path" = "Scripts";
 			"sourceTree" = "<group>";
@@ -366,6 +408,22 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "09CEE40A8D08E0C4DCA9575E";
 		};
+		"1CFB9E437A773C6CF2A316C9" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "EE088F080B29E4F59EFD104B";
+		};
+		"3842802E36D3F831485896FE" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "43486110E4F287F3940B2A41";
+		};
+		"17E9ABAACDCC16A017983C06" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0B2392DDDC9CD0673E49ECB3";
+		};
+		"D2357BB368BCFF4E9C12CBEA" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B1C6A37368071DAD690F77D2";
+		};
 		"B9CE9FC5C9931415A23B04E9" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "AF2F9FAE3498AAE605A680C9";
@@ -388,6 +446,10 @@
 				"E8FFB5887063FC432EAAE92A",
 				"4E92FA7BC58B57AEEF40DA80",
 				"1CFDB24526D4C2AD7A9C2861",
+				"1CFB9E437A773C6CF2A316C9",
+				"3842802E36D3F831485896FE",
+				"17E9ABAACDCC16A017983C06",
+				"D2357BB368BCFF4E9C12CBEA",
 				"B9CE9FC5C9931415A23B04E9",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
@@ -549,6 +611,22 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "09CEE40A8D08E0C4DCA9575E";
 		};
+		"60F0E78E0D9166211665C450" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "EE088F080B29E4F59EFD104B";
+		};
+		"F53AC6CF9F056ACFAFDC7388" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "43486110E4F287F3940B2A41";
+		};
+		"3F5B33F5439F0390D7B57E9D" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0B2392DDDC9CD0673E49ECB3";
+		};
+		"B4373D349444BA56E402D3A2" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "B1C6A37368071DAD690F77D2";
+		};
 		"1592C55462B766C274E245A1" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "AF2F9FAE3498AAE605A680C9";
@@ -571,6 +649,10 @@
 				"A23A93A036EE1C01C5A7E10A",
 				"C1D08626526E2EECF32012E1",
 				"ED537A710084557F29EF1790",
+				"60F0E78E0D9166211665C450",
+				"F53AC6CF9F056ACFAFDC7388",
+				"3F5B33F5439F0390D7B57E9D",
+				"B4373D349444BA56E402D3A2",
 				"1592C55462B766C274E245A1",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";

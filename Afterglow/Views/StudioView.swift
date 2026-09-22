@@ -24,6 +24,7 @@ struct StudioView: View {
                                 VStack(alignment: .leading, spacing: 24) {
                                     stageHeader
                                     visualStage(height: wide ? max(270, min(530, geometry.size.height - 360)) : min(430, max(260, geometry.size.width * 0.84)))
+                                    if model.settings.style == .tron { TronControls() }
                                     gallery
                                 }
                                 .padding(wide ? 28 : 20)
@@ -38,7 +39,7 @@ struct StudioView: View {
                     }
                 }
             }
-            .tint(model.settings.palette.accent)
+            .tint(model.settings.accent)
             .preferredColorScheme(.dark)
             .fileImporter(isPresented: $model.showImporter, allowedContentTypes: [.audio], allowsMultipleSelection: true) { result in
                 switch result {
@@ -57,7 +58,7 @@ struct StudioView: View {
     }
     private func topBar(wide: Bool) -> some View {
         HStack(spacing: 12) {
-            Image(systemName: "waveform.path").font(.system(size: 24, weight: .light)).foregroundStyle(model.settings.palette.accent)
+            Image(systemName: "waveform.path").font(.system(size: 24, weight: .light)).foregroundStyle(model.settings.accent)
             Text("afterglow").font(.system(size: 23, weight: .semibold, design: .rounded)).tracking(-0.8)
             if wide {
                 Text("A SPACE FOR SOUND").font(.system(size: 9, weight: .semibold, design: .monospaced)).tracking(2.5)
@@ -99,14 +100,14 @@ struct StudioView: View {
                     Spacer()
                     Button { model.toggleFavorite(model.settings.style) } label: {
                         Image(systemName: model.settings.favorites.contains(model.settings.style) ? "heart.fill" : "heart")
-                            .foregroundStyle(model.settings.palette.accent).frame(width: 36, height: 36)
+                            .foregroundStyle(model.settings.accent).frame(width: 36, height: 36)
                     }.buttonStyle(.plain).accessibilityLabel("Toggle favorite visualizer")
                 }
                 Spacer()
                 HStack(alignment: .bottom) {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(model.settings.style.title).font(.system(size: 30, weight: .light, design: .rounded))
-                        Text(model.settings.style.subtitle).font(.system(size: 11)).foregroundStyle(StudioTheme.muted)
+                        Text(model.settings.visualTitle).font(.system(size: 30, weight: .light, design: .rounded))
+                        Text(model.settings.visualSubtitle).font(.system(size: 11)).foregroundStyle(StudioTheme.muted)
                     }
                     Spacer()
                     Button { model.immersive = true } label: {
@@ -125,7 +126,7 @@ struct StudioView: View {
             HStack {
                 Text("VISUALIZERS").font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(2)
                 Spacer()
-                Text("08 / CHOOSE YOUR MOOD").font(.system(size: 8, design: .monospaced)).tracking(1).foregroundStyle(StudioTheme.muted)
+                Text(String(format: "%02d / CHOOSE YOUR MOOD", VisualizerStyle.allCases.count)).font(.system(size: 8, design: .monospaced)).tracking(1).foregroundStyle(StudioTheme.muted)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -146,7 +147,7 @@ struct VisualizerCard: View {
                                  settings: model.settings, preview: true)
                     .frame(width: 132, height: 77).clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(
-                        model.settings.style == style ? model.settings.palette.accent.opacity(0.8) : StudioTheme.line,
+                        model.settings.style == style ? model.settings.accent.opacity(0.8) : StudioTheme.line,
                         lineWidth: model.settings.style == style ? 1.5 : 1))
                 HStack {
                     Text(style.title).font(.system(size: 11, weight: model.settings.style == style ? .semibold : .regular))
@@ -177,7 +178,7 @@ struct SourceSidebar: View {
                             Image(systemName: source.symbol).frame(width: 20)
                             Text(source.title).font(.system(size: 12))
                             Spacer(minLength: 0)
-                            if model.source == source { Circle().fill(model.settings.palette.accent).frame(width: 5, height: 5) }
+                            if model.source == source { Circle().fill(model.settings.accent).frame(width: 5, height: 5) }
                         }
                         .padding(.horizontal, 12).padding(.vertical, 13)
                         .background(model.source == source ? StudioTheme.raised : .clear, in: RoundedRectangle(cornerRadius: 10))
@@ -195,7 +196,7 @@ struct SourceSidebar: View {
             }
             Spacer()
             VStack(alignment: .leading, spacing: 8) {
-                Image(systemName: "headphones").font(.system(size: 19, weight: .light)).foregroundStyle(model.settings.palette.accent)
+                Image(systemName: "headphones").font(.system(size: 19, weight: .light)).foregroundStyle(model.settings.accent)
                 Text("Less noise.\nMore feeling.").font(.system(size: 17, weight: .light, design: .rounded))
                 Text("Your music. Your atmosphere.").font(.system(size: 10)).foregroundStyle(StudioTheme.muted)
             }.padding(14)
@@ -207,7 +208,7 @@ struct SignalBadge: View {
     @EnvironmentObject private var model: StudioModel
     var body: some View {
         HStack(spacing: 7) {
-            Circle().fill(model.source.reactive && model.isPlaying ? Color(hex: 0x7DE0B9) : model.settings.palette.accent)
+            Circle().fill(model.source.reactive && model.isPlaying ? Color(hex: 0x7DE0B9) : model.settings.accent)
                 .frame(width: 5, height: 5)
             Text(model.modeLabel).font(.system(size: 8, weight: .medium, design: .monospaced)).tracking(1.2)
         }.padding(.horizontal, 11).padding(.vertical, 8)
@@ -242,6 +243,15 @@ struct ImmersiveView: View {
                         }
                         Spacer()
                         Menu {
+                            if model.settings.style == .tron {
+                                Picker("Tron animation", selection: $model.settings.tronMode) {
+                                    ForEach(TronMode.allCases) { mode in Text(mode.title).tag(mode) }
+                                }
+                                Picker("Tron color", selection: $model.settings.tronPalette) {
+                                    ForEach(TronPalette.allCases) { palette in Text(palette.title).tag(palette) }
+                                }
+                                Divider()
+                            }
                             ForEach(VisualizerStyle.allCases) { style in
                                 Button(style.title) { model.settings.style = style }
                             }

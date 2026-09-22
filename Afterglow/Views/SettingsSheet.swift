@@ -23,19 +23,23 @@ struct InspectorView: View {
                 sectionLabel("ATMOSPHERE")
                 Text("Make it yours.").font(.system(size: 22, weight: .light, design: .rounded))
             }
-            VStack(alignment: .leading, spacing: 13) {
-                sectionLabel("COLOR PALETTE")
-                ForEach(VisualPalette.allCases) { palette in
-                    Button { model.settings.palette = palette } label: {
-                        HStack(spacing: 10) {
-                            HStack(spacing: -4) {
-                                ForEach(0..<3, id: \.self) { index in Circle().fill(palette.colors[index]).frame(width: 15, height: 15) }
-                            }
-                            Text(palette.title).font(.system(size: 12))
-                            Spacer()
-                            if model.settings.palette == palette { Image(systemName: "checkmark").font(.system(size: 10)) }
-                        }.foregroundStyle(model.settings.palette == palette ? .white : StudioTheme.muted)
-                    }.buttonStyle(.plain)
+            if model.settings.style == .tron {
+                TronControls()
+            } else {
+                VStack(alignment: .leading, spacing: 13) {
+                    sectionLabel("COLOR PALETTE")
+                    ForEach(VisualPalette.allCases) { palette in
+                        Button { model.settings.palette = palette } label: {
+                            HStack(spacing: 10) {
+                                HStack(spacing: -4) {
+                                    ForEach(0..<3, id: \.self) { index in Circle().fill(palette.colors[index]).frame(width: 15, height: 15) }
+                                }
+                                Text(palette.title).font(.system(size: 12))
+                                Spacer()
+                                if model.settings.palette == palette { Image(systemName: "checkmark").font(.system(size: 10)) }
+                            }.foregroundStyle(model.settings.palette == palette ? .white : StudioTheme.muted)
+                        }.buttonStyle(.plain)
+                    }
                 }
             }
             Divider()

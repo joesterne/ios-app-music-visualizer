@@ -23,7 +23,8 @@ struct VisualizerCanvas: View {
                 VisualRenderer.draw(context: context, size: size, style: style,
                                     palette: palette, frame: input, time: time,
                                     sensitivity: settings.sensitivity, glow: settings.glow,
-                                    detail: preview ? 0.3 : settings.detail)
+                                    detail: preview ? 0.3 : settings.detail,
+                                    tronMode: settings.tronMode, tronPalette: settings.tronPalette)
             }
         }
         .onAppear { if stopped { frozen = 0 } }
@@ -32,16 +33,22 @@ struct VisualizerCanvas: View {
             else if let frozen { origin = Date().addingTimeInterval(-frozen); self.frozen = nil }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(style.title) visualizer, \(reactive ? "audio reactive" : "ambient animation")")
+        .accessibilityLabel("\(style == .tron ? "Tron, \(settings.tronMode.title), \(settings.tronPalette.title)" : style.title) visualizer, \(reactive ? "audio reactive" : "ambient animation")")
     }
 }
 
 enum VisualRenderer {
     static func draw(context: GraphicsContext, size: CGSize, style: VisualizerStyle,
                      palette: VisualPalette, frame: AudioFrame, time: Double,
-                     sensitivity: Double, glow: Double, detail: Double) {
+                     sensitivity: Double, glow: Double, detail: Double,
+                     tronMode: TronMode = .lightCycles, tronPalette: TronPalette = .lightBlue) {
         let width = size.width, height = size.height
         guard width > 1, height > 1 else { return }
+        if style == .tron {
+            TronRenderer.draw(context: context, size: size, mode: tronMode, palette: tronPalette,
+                              frame: frame, time: time, sensitivity: sensitivity, glow: glow, detail: detail)
+            return
+        }
         var context = context
         let rect = CGRect(origin: .zero, size: size)
         context.fill(Path(rect), with: .color(StudioTheme.background))
@@ -61,6 +68,7 @@ enum VisualRenderer {
         case .constellation: constellation(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .terrain: terrain(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .bloom: bloom(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .tron: break // Drawn above with its own color selection.
         }
     }
 

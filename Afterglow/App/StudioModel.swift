@@ -135,7 +135,7 @@ final class StudioModel: ObservableObject {
         await changeSource(.appleMusic)
         busy = true; defer { busy = false }
         do { try await apple.play(song, within: queue, fromCatalog: catalog) }
-        catch { error = error.localizedDescription }
+        catch { self.error = error.localizedDescription }
         refreshMetadata()
     }
     func togglePlayback() async {
@@ -187,7 +187,7 @@ final class StudioModel: ObservableObject {
         do {
             if source == .local { try local.seek(to: seconds) }
             else if source == .appleMusic { apple.seek(to: seconds) }
-        } catch { error = error.localizedDescription }
+        } catch { self.error = error.localizedDescription }
     }
     func setActive(_ value: Bool) async {
         active = value

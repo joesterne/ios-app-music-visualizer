@@ -47,7 +47,7 @@ enum AudioSource: String, CaseIterable, Identifiable {
 }
 
 enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
-    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom
+    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
     var subtitle: String {
@@ -60,6 +60,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .constellation: "A sky of connections"
         case .terrain: "Ride the frequency landscape"
         case .bloom: "Let the sound unfold"
+        case .tron: "Enter the grid"
         }
     }
     var symbol: String {
@@ -72,6 +73,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .constellation: "sparkles"
         case .terrain: "mountain.2"
         case .bloom: "camera.macro"
+        case .tron: "cpu"
         }
     }
 }
@@ -101,6 +103,32 @@ struct VisualSettings: Codable, Equatable {
     var detail: Double = 0.65
     var fps: Double = 60
     var favorites: [VisualizerStyle] = [.aurora, .orbit]
+    var tronMode: TronMode = .lightCycles
+    var tronPalette: TronPalette = .lightBlue
+    var accent: Color { style == .tron ? tronPalette.color : palette.accent }
+    var visualTitle: String { style == .tron ? tronMode.title : style.title }
+    var visualSubtitle: String { style == .tron ? "TRON · \(tronPalette.title) · \(tronMode.subtitle)" : style.subtitle }
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case style, palette, sensitivity, speed, glow, detail, fps, favorites, tronMode, tronPalette
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        // Keep the user's existing settings when upgrading a v1 installation.
+        style = (try? values.decode(VisualizerStyle.self, forKey: .style)) ?? .aurora
+        palette = (try? values.decode(VisualPalette.self, forKey: .palette)) ?? .ultraviolet
+        sensitivity = try values.decodeIfPresent(Double.self, forKey: .sensitivity) ?? 1.25
+        speed = try values.decodeIfPresent(Double.self, forKey: .speed) ?? 0.65
+        glow = try values.decodeIfPresent(Double.self, forKey: .glow) ?? 0.6
+        detail = try values.decodeIfPresent(Double.self, forKey: .detail) ?? 0.65
+        fps = try values.decodeIfPresent(Double.self, forKey: .fps) ?? 60
+        favorites = (try? values.decode([VisualizerStyle].self, forKey: .favorites)) ?? [.aurora, .orbit]
+        tronMode = (try? values.decode(TronMode.self, forKey: .tronMode)) ?? .lightCycles
+        tronPalette = (try? values.decode(TronPalette.self, forKey: .tronPalette)) ?? .lightBlue
+    }
     static func load() -> VisualSettings {
         guard let data = UserDefaults.standard.data(forKey: "visualSettings.v1"),
               var value = try? JSONDecoder().decode(Self.self, from: data) else { return .init() }

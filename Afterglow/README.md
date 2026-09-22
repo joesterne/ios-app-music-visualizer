@@ -1,8 +1,34 @@
 # Afterglow
 
-A native music-visualizer studio for **iPhone, iPad, and Mac**, with eight visualizers, five palettes, and honest source-mode labels.
+A native music-visualizer studio for **iPhone, iPad, and Mac**, with nine visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
 This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Native build and device verification were not available in the authoring environment; see `Docs/Validation.md` for exactly what was checked.
+
+
+## Tron theme
+
+Select **Tron** in the visualizer gallery, then choose an animation and color in
+its controls below the stage (also available in native visual settings and the
+immersive visualizer menu):
+
+- **Light cycles:** neon riders follow right-angle routes and leave luminous trails.
+- **Identity discs:** spinning illuminated discs rebound off the boundaries, with short afterimages.
+- **Circuit expansion:** branching motherboard-style traces grow indefinitely as the view pulls back, with illuminated junctions and moving signal pulses.
+
+Every mode supports **Light blue**, **Orange**, and **Red**. The Tron color is
+independent of the original five palettes, so switching back restores your previous
+palette. Native settings preserve all existing preferences when upgrading; Tron
+mode/color choices also persist in the browser preview where local storage is available.
+
+The existing sensitivity, motion-speed, glow, detail, favorites, pause, and Reduce
+Motion behavior apply. Measured input changes the glow/line weight and disc size;
+ambient and streaming-companion modes remain independent animations. Circuit
+geometry retains at most eight rings to keep work and memory bounded.
+
+Run `bash Scripts/test-tron.sh` on a Mac with Swift tools to validate settings
+migration, all nine mode/color combinations, disc rebounds, cycle trails, and
+long-running circuit geometry. `AFTERGLOW_TEST_SDK` optionally selects a macOS SDK.
+
 
 ## Try the visuals immediately
 
@@ -71,6 +97,7 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 - **Constellation:** drifting particles, connections, and audio-responsive size.
 - **Terrain:** a perspective frequency landscape.
 - **Bloom:** radial petal curves that expand with frequency energy.
+- **Tron:** light cycles, bouncing identity discs, and expanding circuits; each has light blue, orange, and red options.
 
 Choose **Ultraviolet, Glacier, Ember, Candy, or Monochrome**. Sensitivity, motion speed, glow, detail, frame-rate preference, and favorites persist between app launches. 30 fps reduces rendering work. System Reduce Motion pauses continuous time-based motion; measured amplitude may still change the image.
 
@@ -95,7 +122,7 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 | Core | Portable C FFT and signal processing |
 | Services | MusicKit and sandboxed local collection |
 | Views | Responsive SwiftUI studio, sources, player, settings |
-| Visualizers | Eight Canvas renderers and animation scheduling |
+| Visualizers | Nine visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
 | Config | Info plists, entitlements, build settings, privacy manifest |
 | Tests | Deterministic audio-processing tests |
 | Scripts | Project regeneration and build checks |
