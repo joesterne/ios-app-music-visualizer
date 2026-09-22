@@ -2,7 +2,7 @@
 
 A native music-visualizer studio for **iPhone, iPad, and Mac**, with nine visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
-This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Native build and device verification were not available in the authoring environment; see `Docs/Validation.md` for exactly what was checked.
+This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 22, 2026. Simulator execution and physical-device testing remain unverified; see the [current validation status](#validation-status) below.
 
 
 ## Tron theme
@@ -124,13 +124,36 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 | Views | Responsive SwiftUI studio, sources, player, settings |
 | Visualizers | Nine visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
 | Config | Info plists, entitlements, build settings, privacy manifest |
-| Tests | Deterministic audio-processing tests |
+| Tests | Deterministic audio-processing, settings-migration, and Tron geometry tests |
 | Scripts | Project regeneration and build checks |
 | Docs | Architecture, validation status, device checklist |
 
 There are no third-party app runtime dependencies. `Scripts/generate-project.py` uses standard Python and recreates the checked-in project after adding source files. It also recreates the generated Info plists and entitlements; retain manual edits before regenerating. Python is not needed to open or build the included project.
 
+## Validation status
+
+Local verification completed on September 22, 2026:
+
+| Check | Result |
+| --- | --- |
+| Audio-processing tests | Passed: frequency/RMS at four rates, silence, stereo formats, reset, non-finite input, and concurrent snapshots |
+| Tron tests | Passed: legacy-settings migration, all nine mode/color combinations, 40,000 disc-boundary/continuity samples, 1,200 cycle trails, and bounded circuit growth through 1,000,000 simulated seconds |
+| Native Mac Debug build | Succeeded with Xcode 27, signing disabled |
+| iOS Simulator Debug build | Succeeded with Xcode 27, signing disabled |
+
+These results cover the local working tree, including the test-script fix. The
+initial build attempt used Command Line Tools; selecting the installed Xcode with
+`DEVELOPER_DIR` resolved that build setup issue. Xcode still reported that the
+simulator runtime service was unavailable, so compilation does not establish that
+the app runs in a simulator.
+
+Simulator execution, physical-device testing, and runtime checks for MusicKit
+authorization/playback, microphone input, and Mac system-audio capture remain
+outstanding. Follow the [device checklist](Docs/Device-Checklist.md) before distribution.
+
 ## Verification commands
+
+Run these commands from the `Afterglow` directory.
 
 Portable signal-processing tests, on macOS or Linux with a C compiler:
 
@@ -138,10 +161,23 @@ Portable signal-processing tests, on macOS or Linux with a C compiler:
 bash Scripts/test-dsp.sh
 ```
 
+Settings migration and Tron geometry tests, on a Mac with Swift tools:
+
+```bash
+bash Scripts/test-tron.sh
+```
+
 Native compilation on a Mac with Xcode selected as the developer directory:
 
 ```bash
 bash Scripts/build-apple.sh
+```
+
+If the active developer directory points to Command Line Tools, select Xcode for
+this command (adjust the path if Xcode is installed elsewhere):
+
+```bash
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer bash Scripts/build-apple.sh
 ```
 
 The build script compiles both the native Mac app and the iOS simulator app without signing. It does not validate account access or install a signed app. Follow `Docs/Device-Checklist.md` before treating the app as production-ready or submitting it to TestFlight/App Store.
