@@ -1,42 +1,53 @@
-# iOS App Music Visualizer
+# Afterglow — Music Visualizer
 
-**Afterglow** — the iPhone, iPad, and native Mac music visualizer.
+A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from eleven visualizers, including Tron, Halo, and Iron Man.
 
-The original project from the September 21 **Build music visualizer app** conversation
-has been restored under [`Afterglow/`](Afterglow/). The previously created repository
-contained only this README and a `.gitignore`; the app archive was still attached to
-that conversation.
+## Run locally
 
-- Open [`Afterglow/Afterglow.xcodeproj`](Afterglow/Afterglow.xcodeproj) in Xcode.
-- Open [`Afterglow/Preview.html`](Afterglow/Preview.html) in a browser for the interactive preview.
-- See [`Afterglow/README.md`](Afterglow/README.md) for music sources and platform setup.
+### Browser preview
 
-Choose **Tron** in the visualizer gallery to access **Light cycles**, **Identity discs**,
-and **Circuit expansion**, each in **Light blue**, **Orange**, or **Red**.
+From the repository root, run:
 
-Choose **Halo** for a sci-fi ringworld with stars, glowing surface panels, orbiting
-energy pulses, and audio-responsive spires. It is available in the native gallery
-and browser preview, using the existing palette and motion controls.
+```bash
+python3 -m http.server 8765 --bind 127.0.0.1 --directory Afterglow
+```
 
-Choose **Iron Man** for a white-blue arc reactor, rotating red/gold armor rings,
-and audio-reactive HUD accents. Available in the native gallery and browser preview.
+Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop the server. If port 8765 is already in use, try 8766 and use that port in the URL.
 
-## Validation status
+Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all eleven visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
 
-Local verification completed on September 22, 2026:
+The preview runs locally without an account, backend, or API key. Audio is not uploaded. It does not provide native MusicKit playback or Mac system-audio capture.
 
-- **Audio-processing tests passed:** frequency/RMS, silence, stereo formats, reset,
-  non-finite input, and concurrent snapshots.
-- **Tron tests passed:** legacy-settings migration, all nine mode/color combinations,
-  40,000 disc-boundary/continuity samples, 1,200 cycle trails, and bounded circuit
-  growth through 1,000,000 simulated seconds.
-- **Native Mac and iOS Simulator Debug builds succeeded** with Xcode 27 and signing disabled.
+### Native Mac app
 
-These results cover the local working tree, including the test-script fix. Simulator
-execution and physical-device testing remain unverified; Xcode reported that the
-simulator runtime service was unavailable. MusicKit authorization/playback,
-microphone input, and Mac system-audio capture still need runtime verification.
+Requires a Mac with **Xcode 16 or newer** and **macOS 14 or newer**.
 
-See the [verification commands](Afterglow/README.md#verification-commands) to repeat
-the checks and the [device checklist](Afterglow/Docs/Device-Checklist.md) for remaining
-validation before distribution.
+```bash
+open Afterglow/Afterglow.xcodeproj
+```
+
+In Xcode, select **Afterglow-Mac → My Mac**, then press **⌘R**. The Mac target uses local signing; choose **Sign to Run Locally** if Xcode asks. Ambient visuals and local audio files work without MusicKit setup. For live input, choose **Microphone / input** or **Mac system audio** and grant the relevant macOS permission.
+
+### iPhone / iPad
+
+Open the same project, choose **Afterglow-iOS**, select an **iOS 17-or-newer simulator** or a connected device, and press **⌘R**. A physical device requires your development team and a unique `BUNDLE_ID_PREFIX` in `Afterglow/Config/App.xcconfig`.
+
+See the [full setup guide](Afterglow/README.md) for signing, music-source capabilities, and optional Apple Music configuration.
+
+## Visuals and controls
+
+- **Tron:** Light cycles, Identity discs, and Circuit expansion; each in light blue, orange, or red.
+- **Halo:** a glowing ringworld, stars, orbiting energy, and audio-responsive spires.
+- **Iron Man:** a white-blue arc reactor, rotating red/gold rings, and reactive HUD accents.
+- **React to audio:** saved preference for measured audio response or independent animation. Streaming companions use independent animation because they do not supply audio samples.
+- **Gallery scrolling:** visible horizontal control for all eleven styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
+
+The renderers reuse Halo depth orders and browser frequency ranges, skip hidden browser rendering/analysis, and reduce native frame publication during independent animation. No device-specific speedup has been benchmarked.
+
+## Validation
+
+On September 24, 2026, DSP tests, settings/geometry tests, browser logic regression tests, and unsigned macOS/iOS Simulator builds passed. Browser interaction checks verified response-toggle persistence and gallery scrolling. Earlier in the same session, the locally signed Mac app launched and microphone/local-file playback were exercised.
+
+The newest native toggle/scroll changes are build-verified; native runtime verification of those changes is still pending. Browser microphone capture, Mac system-audio permission, configured MusicKit playback, physical-device behavior, and sustained performance remain open checks. Compilation does not establish runtime behavior.
+
+See the [UI/audio validation report](Afterglow/Docs/UI-Audio-Validation.md), [verification commands](Afterglow/README.md#verification-commands), and [device checklist](Afterglow/Docs/Device-Checklist.md).

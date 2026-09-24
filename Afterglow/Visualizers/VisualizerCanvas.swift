@@ -38,6 +38,13 @@ struct VisualizerCanvas: View {
 }
 
 enum VisualRenderer {
+    // Bounded, immutable depth orders shared by every Halo frame and thumbnail.
+    private static let haloOrders: [[Int]] = (48...96).map { count in
+        (0..<count).sorted {
+            sin(Double($0) / Double(count) * .pi * 2) < sin(Double($1) / Double(count) * .pi * 2)
+        }
+    }
+
     static func draw(context: GraphicsContext, size: CGSize, style: VisualizerStyle,
                      palette: VisualPalette, frame: AudioFrame, time: Double,
                      sensitivity: Double, glow: Double, detail: Double,
@@ -95,11 +102,9 @@ enum VisualRenderer {
             let star = CGRect(x: abs(x) * s.width, y: abs(y) * s.height, width: r * 2, height: r * 2)
             c.fill(Path(ellipseIn: star), with: .color(colors[2].opacity(0.18 + 0.3 * (0.5 + 0.5 * sin(t * 0.4 + seed)))))
         }
-        let segments = Int(48 + detail * 48)
+        let segments = min(96, max(48, Int(48 + detail * 48)))
         // Back-to-front ordering gives the ring a solid inner surface.
-        let order = (0..<segments).sorted {
-            sin(Double($0) / Double(segments) * .pi * 2) < sin(Double($1) / Double(segments) * .pi * 2)
-        }
+        let order = haloOrders[segments - 48]
         for i in order {
             let a = Double(i) / Double(segments) * .pi * 2
             let b = Double(i + 1) / Double(segments) * .pi * 2

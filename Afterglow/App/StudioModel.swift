@@ -64,9 +64,10 @@ final class StudioModel: ObservableObject {
             self?.refresh()
         }
     }
-    var modeLabel: String { source.reactive ? (isPlaying ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION" }
+    var visualsReactive: Bool { settings.audioReactive && source.reactive }
+    var modeLabel: String { visualsReactive ? (isPlaying ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION" }
     var modeDescription: String {
-        source.reactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
+        visualsReactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
     }
     var artworkURL: URL? { source == .appleMusic ? apple.artworkURL : nil }
 
@@ -119,7 +120,10 @@ final class StudioModel: ObservableObject {
             selectedTrack = track.id
             try local.play()
             refreshMetadata()
-        } catch { self.error = error.localizedDescription }
+        } catch {
+            selectedTrack = nil; local.clear(); analyzer.reset(); frame = .silent
+            self.error = error.localizedDescription; refreshMetadata()
+        }
     }
     func removeTrack(_ track: LocalTrack) {
         if selectedTrack == track.id { local.clear(); selectedTrack = nil; isPlaying = false; frame = .silent }
@@ -149,6 +153,7 @@ final class StudioModel: ObservableObject {
                 else { try local.play() }
             case .appleMusic: try await apple.toggle()
             case .microphone, .systemAudio:
+                busy = true; defer { busy = false }
                 if isPlaying {
                     microphone.stop()
                     #if os(macOS)
@@ -156,7 +161,6 @@ final class StudioModel: ObservableObject {
                     #endif
                     isPlaying = false; analyzer.reset(); frame = .silent
                 } else {
-                    busy = true; defer { busy = false }
                     if source == .microphone { try await microphone.start() }
                     else {
                         #if os(macOS)
@@ -171,6 +175,7 @@ final class StudioModel: ObservableObject {
         refreshMetadata()
     }
     func skip(forward: Bool) async {
+        guard !busy else { return }
         if source == .local { await advanceLocal(forward: forward, auto: false) }
         else if source == .appleMusic {
             do { try await apple.skip(forward: forward) } catch { self.error = error.localizedDescription }
@@ -209,7 +214,7 @@ final class StudioModel: ObservableObject {
     }
     private func refresh() {
         guard active else { return }
-        if source.reactive && isPlaying { frame = analyzer.snapshot() }
+        if source.reactive && isPlaying && (settings.audioReactive || showSources) { frame = analyzer.snapshot() }
         ticks += 1
         if ticks % 6 == 0 { refreshMetadata() }
     }
