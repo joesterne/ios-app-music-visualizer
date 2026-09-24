@@ -6,6 +6,11 @@ struct TronTests {
         // Upgrading the saved v1 object must preserve every original setting.
         let legacy = Data(#"{"style":"orbit","palette":"ember","sensitivity":2.1,"speed":1.4,"glow":0.2,"detail":0.8,"fps":30,"favorites":["bloom","terrain"]}"#.utf8)
         let old = try JSONDecoder().decode(VisualSettings.self, from: legacy)
+        precondition(old.audioReactive)
+        var independent = old
+        independent.audioReactive = false
+        let restoredResponse = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(independent))
+        precondition(!restoredResponse.audioReactive)
         precondition(old.style == .orbit && old.palette == .ember)
         precondition(old.sensitivity == 2.1 && old.speed == 1.4 && old.glow == 0.2)
         precondition(old.detail == 0.8 && old.fps == 30 && old.favorites == [.bloom, .terrain])

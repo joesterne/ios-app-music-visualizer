@@ -195,6 +195,12 @@ private struct AppleMusicPanel: View {
                     Button("Load more songs") { Task { await service.loadMoreLibrary() } }.disabled(service.busy)
                 }
             }
+            if let error = service.error {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(error).font(.system(size: 12)).foregroundStyle(.orange).textSelection(.enabled)
+                    Button("Dismiss message") { service.error = nil }.buttonStyle(.bordered)
+                }.accessibilityElement(children: .contain)
+            }
             Text("Apple Music playback uses ambient visuals. MusicKit does not provide PCM samples to this app’s analyzer.")
                 .font(.system(size: 11)).foregroundStyle(StudioTheme.muted)
         }
@@ -202,9 +208,6 @@ private struct AppleMusicPanel: View {
             do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
             await service.search(query)
         }
-        .alert("Apple Music", isPresented: Binding(get: { service.error != nil }, set: { if !$0 { service.error = nil } })) {
-            Button("OK") { service.error = nil }
-        } message: { Text(service.error ?? "") }
     }
 }
 
