@@ -14,6 +14,13 @@ that conversation.
 Choose **Tron** in the visualizer gallery to access **Light cycles**, **Identity discs**,
 and **Circuit expansion**, each in **Light blue**, **Orange**, or **Red**.
 
+Choose **Halo** for a sci-fi ringworld with stars, glowing surface panels, orbiting
+energy pulses, and audio-responsive spires. It is available in the native gallery
+and browser preview, using the existing palette and motion controls.
+
+Choose **Iron Man** for a white-blue arc reactor, rotating red/gold armor rings,
+and audio-reactive HUD accents. Available in the native gallery and browser preview.
+
 ## Validation status
 
 Local verification completed on September 22, 2026:

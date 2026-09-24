@@ -68,7 +68,139 @@ enum VisualRenderer {
         case .constellation: constellation(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .terrain: terrain(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .bloom: bloom(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .halo: halo(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .ironMan: ironMan(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .tron: break // Drawn above with its own color selection.
+        }
+    }
+
+    // A projected ringworld: bounded geometry, with spectrum-driven energy spires.
+    private static func halo(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
+                             _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        let unit = min(s.width, s.height)
+        let radius = unit * 0.39
+        let tilt = -0.34 + sin(t * 0.07) * 0.08
+        let flatten = 0.48 + sin(t * 0.09) * 0.08
+        func point(_ a: Double, _ r: Double, _ lift: Double = 0) -> CGPoint {
+            let x = cos(a) * r, y = sin(a) * r * flatten - lift
+            return CGPoint(x: s.width * 0.5 + x * cos(tilt) - y * sin(tilt),
+                           y: s.height * 0.47 + x * sin(tilt) + y * cos(tilt))
+        }
+        let starCount = Int(30 + detail * 65)
+        for i in 0..<starCount {
+            let seed = Double(i)
+            let x = (sin(seed * 127.1) * 43758.5453).truncatingRemainder(dividingBy: 1)
+            let y = (sin(seed * 311.7) * 96321.9123).truncatingRemainder(dividingBy: 1)
+            let r = (i % 7 == 0 ? 1.3 : 0.65) * max(0.65, unit / 350)
+            let star = CGRect(x: abs(x) * s.width, y: abs(y) * s.height, width: r * 2, height: r * 2)
+            c.fill(Path(ellipseIn: star), with: .color(colors[2].opacity(0.18 + 0.3 * (0.5 + 0.5 * sin(t * 0.4 + seed)))))
+        }
+        let segments = Int(48 + detail * 48)
+        // Back-to-front ordering gives the ring a solid inner surface.
+        let order = (0..<segments).sorted {
+            sin(Double($0) / Double(segments) * .pi * 2) < sin(Double($1) / Double(segments) * .pi * 2)
+        }
+        for i in order {
+            let a = Double(i) / Double(segments) * .pi * 2
+            let b = Double(i + 1) / Double(segments) * .pi * 2
+            let signal = band(f, i * 64 / segments, gain)
+            let inner = radius * 0.82
+            var panel = Path()
+            panel.move(to: point(a, inner)); panel.addLine(to: point(a, radius))
+            panel.addLine(to: point(b, radius)); panel.addLine(to: point(b, inner)); panel.closeSubpath()
+            c.fill(panel, with: .color(colors[i % 5 == 0 ? 1 : 0].opacity(0.10 + signal * 0.18)))
+            var seam = Path(); seam.move(to: point(a, inner)); seam.addLine(to: point(a, radius))
+            c.stroke(seam, with: .color(colors[1].opacity(0.35)), lineWidth: 0.7)
+            if i % 3 == 0 {
+                var spire = Path(); spire.move(to: point(a, radius * 0.91))
+                spire.addLine(to: point(a, radius * 0.91, unit * (0.025 + signal * 0.13)))
+                trace(&c, spire, color: colors[2], width: 1.2, glow: glow, opacity: 0.4 + signal * 0.5)
+            }
+        }
+        for factor in [0.82, 0.86, 1.0] {
+            var rim = Path()
+            for i in 0...128 {
+                let p = point(Double(i) / 128 * .pi * 2, radius * factor)
+                if i == 0 { rim.move(to: p) } else { rim.addLine(to: p) }
+            }
+            trace(&c, rim, color: colors[factor == 0.86 ? 1 : 0], width: factor == 0.86 ? 0.8 : 2, glow: glow)
+        }
+        for pulse in 0..<3 {
+            var arc = Path()
+            for i in 0...18 {
+                let a = t * 0.22 + Double(pulse) * .pi * 2 / 3 + Double(i) * 0.018
+                let p = point(a, radius * 0.96)
+                if i == 0 { arc.move(to: p) } else { arc.addLine(to: p) }
+            }
+            trace(&c, arc, color: colors[2], width: 2.5, glow: glow, opacity: 0.9)
+        }
+    }
+
+    private static func ironMan(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
+                                _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        let unit = min(s.width, s.height)
+        let center = CGPoint(x: s.width * 0.5, y: s.height * 0.46)
+        let red = Color(hex: 0xFF493B), gold = Color(hex: 0xFFD080)
+        let cyan = Color(hex: 0x75E8FF)
+        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        let radius = unit * 0.29
+        func point(_ a: Double, _ r: Double) -> CGPoint {
+            CGPoint(x: center.x + cos(a) * r, y: center.y + sin(a) * r)
+        }
+        func arc(_ r: Double, _ start: Double, _ length: Double) -> Path {
+            var p = Path()
+            for i in 0...24 {
+                let q = point(start + length * Double(i) / 24, r)
+                if i == 0 { p.move(to: q) } else { p.addLine(to: q) }
+            }
+            return p
+        }
+        let aura = Path(ellipseIn: CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2))
+        c.fill(aura, with: .radialGradient(Gradient(colors: [cyan.opacity(0.12 + energy * 0.16), .clear]),
+                                         center: center, startRadius: 0, endRadius: radius))
+        // Segmented red/gold armor rotates around the stationary reactor core.
+        for ring in 0..<3 {
+            let r = radius * (0.78 + Double(ring) * 0.19)
+            for segment in 0..<6 {
+                let a = Double(segment) * .pi / 3 + t * (ring % 2 == 0 ? 0.10 : -0.14)
+                let color = ring == 1 ? red : gold
+                trace(&c, arc(r, a, .pi / 3 * 0.76), color: color,
+                      width: ring == 1 ? 4 : 1.4, glow: glow * 0.7, opacity: 0.6)
+            }
+        }
+        let ticks = Int(36 + detail * 36)
+        for i in 0..<ticks {
+            let a = Double(i) / Double(ticks) * .pi * 2 - .pi / 2
+            let signal = band(f, i * 64 / ticks, gain)
+            let r = radius * 1.23
+            var p = Path(); p.move(to: point(a, r))
+            p.addLine(to: point(a, r + unit * (0.008 + signal * 0.045)))
+            c.stroke(p, with: .color((i % 6 == 0 ? gold : colors[0]).opacity(0.35 + signal * 0.6)), lineWidth: i % 6 == 0 ? 2 : 1)
+        }
+        for vane in 0..<12 {
+            let a = Double(vane) * .pi / 6
+            var p = Path(); p.move(to: point(a, radius * 0.45))
+            p.addLine(to: point(a + 0.12, radius * 0.66))
+            trace(&c, p, color: cyan, width: 3, glow: glow, opacity: 0.45 + band(f, vane * 5, gain) * 0.5)
+        }
+        trace(&c, arc(radius * 0.70, 0, .pi * 2), color: cyan, width: 2, glow: glow)
+        // The triangular white-blue heart gives the reactor a distinct silhouette.
+        var core = Path()
+        for i in 0..<3 {
+            let p = point(-.pi / 2 + Double(i) * .pi * 2 / 3, radius * (0.40 + energy * 0.035))
+            if i == 0 { core.move(to: p) } else { core.addLine(to: p) }
+        }
+        core.closeSubpath()
+        c.fill(core, with: .color(cyan.opacity(0.16 + energy * 0.30)))
+        trace(&c, core, color: .white, width: 2.5, glow: glow, opacity: 0.95)
+        // Corner brackets frame the HUD without relying on tiny decorative text.
+        for sx in [-1.0, 1.0] {
+            for sy in [-1.0, 1.0] {
+                let x = center.x + sx * unit * 0.43, y = center.y + sy * unit * 0.35
+                var p = Path(); p.move(to: CGPoint(x: x - sx * unit * 0.065, y: y))
+                p.addLine(to: CGPoint(x: x, y: y)); p.addLine(to: CGPoint(x: x, y: y - sy * unit * 0.05))
+                trace(&c, p, color: red, width: 1.4, glow: glow * 0.5, opacity: 0.65)
+            }
         }
     }
 
