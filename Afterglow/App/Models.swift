@@ -47,9 +47,9 @@ enum AudioSource: String, CaseIterable, Identifiable {
 }
 
 enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
-    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron
+    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var title: String { self == .ironMan ? "Iron Man" : rawValue.capitalized }
     var subtitle: String {
         switch self {
         case .aurora: "Ribbons of light"
@@ -61,6 +61,8 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .terrain: "Ride the frequency landscape"
         case .bloom: "Let the sound unfold"
         case .tron: "Enter the grid"
+        case .halo: "Beyond the ringworld"
+        case .ironMan: "Power the arc reactor"
         }
     }
     var symbol: String {
@@ -74,6 +76,8 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .terrain: "mountain.2"
         case .bloom: "camera.macro"
         case .tron: "cpu"
+        case .halo: "globe.americas"
+        case .ironMan: "bolt.circle"
         }
     }
 }

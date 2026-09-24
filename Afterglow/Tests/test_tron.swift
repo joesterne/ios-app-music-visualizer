@@ -18,7 +18,19 @@ struct TronTests {
                 precondition(restored == settings, "Tron selection must round-trip without losing preferences")
             }
         }
-        precondition(VisualizerStyle.allCases.count == 9)
+        precondition(VisualizerStyle.allCases.count == 11)
+        var halo = old
+        halo.style = .halo
+        halo.favorites.append(.halo)
+        let haloRestored = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(halo))
+        precondition(haloRestored == halo, "Halo selection and favorites must preserve existing settings")
+
+        var ironMan = halo
+        ironMan.style = .ironMan
+        ironMan.favorites.append(.ironMan)
+        let ironManRestored = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(ironMan))
+        precondition(ironManRestored == ironMan, "Iron Man must preserve Halo favorites and existing preferences")
+        precondition(VisualizerStyle.ironMan.title == "Iron Man")
 
         // Every disc, including its largest audio-reactive radius, stays on screen
         // through rebounds in portrait, landscape, square, and ultrawide layouts.
@@ -55,6 +67,6 @@ struct TronTests {
                 precondition(abs(TronGeometry.length(of: partial) - TronGeometry.length(of: trace.points) * trace.progress) < 1e-8)
             }
         }
-        print("PASS: legacy settings migration; all 9 Tron selections; 40,000 disc-boundary/continuity samples; 1,200 cycle trails; bounded circuit growth through 1,000,000 seconds.")
+        print("PASS: Iron Man and Halo settings/favorites round-trip; legacy settings migration; all 9 Tron selections; 40,000 disc-boundary/continuity samples; 1,200 cycle trails; bounded circuit growth through 1,000,000 seconds.")
     }
 }

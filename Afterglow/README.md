@@ -1,6 +1,6 @@
 # Afterglow
 
-A native music-visualizer studio for **iPhone, iPad, and Mac**, with nine visualizers, five original palettes, three Tron colors, and clear source-mode labels.
+A native music-visualizer studio for **iPhone, iPad, and Mac**, with eleven visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
 This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 22, 2026. Simulator execution and physical-device testing remain unverified; see the [current validation status](#validation-status) below.
 
@@ -97,6 +97,8 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 - **Constellation:** drifting particles, connections, and audio-responsive size.
 - **Terrain:** a perspective frequency landscape.
 - **Bloom:** radial petal curves that expand with frequency energy.
+- **Iron Man:** a white-blue triangular arc reactor, counter-rotating red/gold armor rings, and audio-reactive HUD ticks. The selected palette colors the HUD accents; sensitivity, motion speed, glow, detail, and pause controls apply.
+- **Halo:** a tilted ringworld in a starfield, with illuminated surface panels, orbiting energy pulses, and spectrum-driven spires. Uses the selected palette and existing motion, sensitivity, glow, and detail controls.
 - **Tron:** light cycles, bouncing identity discs, and expanding circuits; each has light blue, orange, and red options.
 
 Choose **Ultraviolet, Glacier, Ember, Candy, or Monochrome**. Sensitivity, motion speed, glow, detail, frame-rate preference, and favorites persist between app launches. 30 fps reduces rendering work. System Reduce Motion pauses continuous time-based motion; measured amplitude may still change the image.
@@ -122,7 +124,7 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 | Core | Portable C FFT and signal processing |
 | Services | MusicKit and sandboxed local collection |
 | Views | Responsive SwiftUI studio, sources, player, settings |
-| Visualizers | Nine visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
+| Visualizers | Eleven visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
 | Config | Info plists, entitlements, build settings, privacy manifest |
 | Tests | Deterministic audio-processing, settings-migration, and Tron geometry tests |
 | Scripts | Project regeneration and build checks |
