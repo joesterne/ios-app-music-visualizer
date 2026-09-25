@@ -47,9 +47,9 @@ enum AudioSource: String, CaseIterable, Identifiable {
 }
 
 enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
-    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan
+    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan, superMario, spaceFlight
     var id: String { rawValue }
-    var title: String { self == .ironMan ? "Iron Man" : rawValue.capitalized }
+    var title: String { self == .spaceFlight ? "Space Flight" : self == .superMario ? "Super Mario" : self == .ironMan ? "Iron Man" : rawValue.capitalized }
     var subtitle: String {
         switch self {
         case .aurora: "Ribbons of light"
@@ -63,6 +63,8 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .tron: "Enter the grid"
         case .halo: "Beyond the ringworld"
         case .ironMan: "Power the arc reactor"
+        case .superMario: "Run, jump, and follow the music"
+        case .spaceFlight: "Bank past planets. Slip between starships."
         }
     }
     var symbol: String {
@@ -78,6 +80,8 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .tron: "cpu"
         case .halo: "globe.americas"
         case .ironMan: "bolt.circle"
+        case .superMario: "gamecontroller"
+        case .spaceFlight: "airplane"
         }
     }
 }
@@ -106,6 +110,7 @@ struct VisualSettings: Codable, Equatable {
     var glow: Double = 0.6
     var detail: Double = 0.65
     var fps: Double = 60
+    var audioReactive = true
     var favorites: [VisualizerStyle] = [.aurora, .orbit]
     var tronMode: TronMode = .lightCycles
     var tronPalette: TronPalette = .lightBlue
@@ -116,7 +121,7 @@ struct VisualSettings: Codable, Equatable {
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case style, palette, sensitivity, speed, glow, detail, fps, favorites, tronMode, tronPalette
+        case style, palette, sensitivity, speed, glow, detail, fps, audioReactive, favorites, tronMode, tronPalette
     }
 
     init(from decoder: Decoder) throws {
@@ -128,6 +133,7 @@ struct VisualSettings: Codable, Equatable {
         speed = try values.decodeIfPresent(Double.self, forKey: .speed) ?? 0.65
         glow = try values.decodeIfPresent(Double.self, forKey: .glow) ?? 0.6
         detail = try values.decodeIfPresent(Double.self, forKey: .detail) ?? 0.65
+        audioReactive = try values.decodeIfPresent(Bool.self, forKey: .audioReactive) ?? true
         fps = try values.decodeIfPresent(Double.self, forKey: .fps) ?? 60
         favorites = (try? values.decode([VisualizerStyle].self, forKey: .favorites)) ?? [.aurora, .orbit]
         tronMode = (try? values.decode(TronMode.self, forKey: .tronMode)) ?? .lightCycles

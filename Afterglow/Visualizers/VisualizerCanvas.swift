@@ -38,6 +38,13 @@ struct VisualizerCanvas: View {
 }
 
 enum VisualRenderer {
+    // Bounded, immutable depth orders shared by every Halo frame and thumbnail.
+    private static let haloOrders: [[Int]] = (48...96).map { count in
+        (0..<count).sorted {
+            sin(Double($0) / Double(count) * .pi * 2) < sin(Double($1) / Double(count) * .pi * 2)
+        }
+    }
+
     static func draw(context: GraphicsContext, size: CGSize, style: VisualizerStyle,
                      palette: VisualPalette, frame: AudioFrame, time: Double,
                      sensitivity: Double, glow: Double, detail: Double,
@@ -70,7 +77,145 @@ enum VisualRenderer {
         case .bloom: bloom(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .halo: halo(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .ironMan: ironMan(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .superMario: mario(&context, size, frame, time, colors, sensitivity, glow)
+        case .spaceFlight: spaceFlight(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .tron: break // Drawn above with its own color selection.
+        }
+    }
+
+    // Fixed object pools and a time-based camera keep flight smooth and bounded.
+    private static func spaceFlight(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
+                                    _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        c.blendMode = .normal
+        let w = s.width, h = s.height, unit = min(w, h)
+        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        let bank = sin(t * 0.52) * 0.11, rise = cos(t * 0.37) * 0.055
+        let cx = w * (0.5 + bank), cy = h * (0.45 + rise)
+        func point(_ x: Double, _ y: Double, _ z: Double) -> CGPoint {
+            CGPoint(x: cx + unit * (x * cos(bank) - y * sin(bank)) / z,
+                    y: cy + unit * (x * sin(bank) + y * cos(bank)) / z)
+        }
+        func line(_ points: [CGPoint], _ color: Color, _ width: Double) {
+            var p = Path(); p.addLines(points); c.stroke(p, with: .color(color), lineWidth: width)
+        }
+        let bounds = CGRect(origin: .zero, size: s)
+        c.fill(Path(bounds), with: .color(Color(red: 0.015, green: 0.025, blue: 0.065)))
+        c.fill(Path(bounds), with: .radialGradient(Gradient(colors: [colors[1].opacity(0.20 + energy * 0.12), .clear]), center: CGPoint(x: cx, y: cy), startRadius: 0, endRadius: max(w, h) * 0.7))
+        for i in 0..<Int(90 + detail * 150) {
+            let seed = Double(i), angle = seed * 2.399963
+            let radius = 0.16 + abs(sin(seed * 43.7)) * 1.5
+            let z = 0.16 + (1 - (seed * 0.618 + t * 0.28).truncatingRemainder(dividingBy: 1)) * 3
+            let x = cos(angle) * radius, y = sin(angle) * radius
+            line([point(x, y, z), point(x, y, z + 0.05 + energy * 0.10)], .white.opacity(0.28 + 0.6 / (z + 1)), 0.5 + 1 / (z + 1))
+        }
+        // Draw far objects first. Lateral separation increases as objects approach: an automatic dodge.
+        let objects = (0..<9).map { i in
+            let phase = (Double(i) / 9 - t * 0.045).truncatingRemainder(dividingBy: 1)
+            return (i, 0.22 + (phase < 0 ? phase + 1 : phase) * 3.8)
+        }
+            .sorted { $0.1 > $1.1 }
+        for (i, z) in objects {
+            let side = i % 2 == 0 ? -1.0 : 1.0
+            let x = side * (0.42 + Double(i % 3) * 0.12 + 0.16 / z)
+            let y = sin(Double(i) * 2.7) * 0.38
+            let p = point(x, y, z), r = unit * (i % 3 == 0 ? 0.22 : 0.07) / z
+            guard p.x + r * 2 > 0, p.x - r * 2 < w, p.y + r * 2 > 0, p.y - r * 2 < h else { continue }
+            if i % 3 == 0 {
+                let rect = CGRect(x: p.x-r, y: p.y-r, width: r*2, height: r*2)
+                c.fill(Path(ellipseIn: rect), with: .radialGradient(Gradient(colors: [colors[i % 3], Color(red: 0.025, green: 0.035, blue: 0.10)]), center: CGPoint(x: p.x-r*0.4, y: p.y-r*0.45), startRadius: 0, endRadius: r*1.7))
+                c.stroke(Path(ellipseIn: rect.insetBy(dx: -2, dy: -2)), with: .color(colors[0].opacity(0.3 + glow*0.35)), lineWidth: 1.5)
+                var ring = Path(); ring.addEllipse(in: CGRect(x: p.x-r*1.6, y: p.y-r*0.3, width: r*3.2, height: r*0.6))
+                c.stroke(ring, with: .color(colors[2].opacity(0.6)), lineWidth: max(1, r*0.045))
+            } else {
+                var ship = Path(); ship.addLines([CGPoint(x:p.x,y:p.y-r),CGPoint(x:p.x+r*1.7,y:p.y+r*0.6),CGPoint(x:p.x+r*0.3,y:p.y+r*0.3),CGPoint(x:p.x,y:p.y+r),CGPoint(x:p.x-r*0.3,y:p.y+r*0.3),CGPoint(x:p.x-r*1.7,y:p.y+r*0.6)]); ship.closeSubpath()
+                c.fill(ship, with: .color(Color(red: 0.15, green: 0.22, blue: 0.35)))
+                c.stroke(ship, with: .color(colors[0]), lineWidth: max(1,r*0.045))
+                line([CGPoint(x:p.x-r*0.35,y:p.y+r*0.4),CGPoint(x:p.x-r*0.35,y:p.y+r*(1.2+energy))], colors[2], max(2,r*0.13))
+                line([CGPoint(x:p.x+r*0.35,y:p.y+r*0.4),CGPoint(x:p.x+r*0.35,y:p.y+r*(1.2+energy))], colors[2], max(2,r*0.13))
+            }
+        }
+        // Cockpit stays fixed while the starfield banks, preserving the first-person viewpoint.
+        for side in [-1.0, 1.0] {
+            let edge = side < 0 ? 0.0 : w
+            line([CGPoint(x:edge,y:h*0.72),CGPoint(x:w*0.5+side*w*0.27,y:h*0.89),CGPoint(x:w*0.5+side*w*0.16,y:h)], colors[0].opacity(0.6), 2)
+        }
+        let aim = CGPoint(x:w*0.5,y:h*0.45)
+        line([CGPoint(x:aim.x-13,y:aim.y),CGPoint(x:aim.x-5,y:aim.y)], colors[0].opacity(0.55), 1)
+        line([CGPoint(x:aim.x+5,y:aim.y),CGPoint(x:aim.x+13,y:aim.y)], colors[0].opacity(0.55), 1)
+    }
+
+    private static let marioSprite = ["....RRRRR...", "...RRRRRRRR.", "...BBBSSKS..", "..BSBSSSKSS.", "..BSBBSSSKSS", "...BSSSSKKK.", "....SSSSSS..", "...RRBRR....", "..RRRBRBRR..", ".RRRRBBBBRR.", ".SSRBYYBRSS.", ".SSSBBBBSSS.", "...BBBBBB...", "..BBB..BBB..", ".KKK....KKK.", "KKKK....KKKK"].map { Array($0) }
+
+    // A fixed-size looping course. Camera and jump share world coordinates so Mario clears each pipe.
+    private static func mario(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
+                              _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double) {
+        c.blendMode = .normal
+        let scale = s.height / 240, width = s.width / scale
+        let travel = (max(0, t) * 38).truncatingRemainder(dividingBy: 640)
+        let heroX = width * 0.28, camera = travel - heroX
+        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        func box(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: Color) {
+            c.fill(Path(CGRect(x: x * scale, y: y * scale, width: w * scale, height: h * scale)), with: .color(color))
+        }
+        let sky = Color(red: 0.10, green: 0.22, blue: 0.43)
+        let grass = Color(red: 0.32, green: 0.77, blue: 0.28)
+        let soil = Color(red: 0.56, green: 0.28, blue: 0.13)
+        let gold = Color(red: 1, green: 0.77, blue: 0.18)
+        box(0, 0, width, 240, sky)
+        for i in -1...Int(width / 100 + 2) {
+            let x = Double(i) * 100 - (travel * 0.2).truncatingRemainder(dividingBy: 100)
+            box(x, 56, 34, 9, .white.opacity(0.7)); box(x + 8, 49, 18, 8, .white.opacity(0.7))
+            for j in 0..<5 { box(x + Double(j) * 10, 174 - Double(min(j, 4-j)) * 11, 10, 28 + Double(min(j, 4-j)) * 11, grass.opacity(0.4)) }
+        }
+        box(0, 190, width, 50, soil); box(0, 188, width, 5, grass)
+        for i in -1...Int(width / 16 + 2) {
+            let x = Double(i) * 16 - travel.truncatingRemainder(dividingBy: 16)
+            box(x, 198, 14, 2, .black.opacity(0.2)); box(x, 218, 14, 2, .black.opacity(0.2)); box(x, 200, 2, 16, .black.opacity(0.2))
+        }
+        let first = Int(floor(camera / 640)) - 1
+        let last = Int(ceil((camera + width) / 640)) + 1
+        for lap in first...last {
+            let offset = Double(lap) * 640 - camera
+            for position in [160.0, 400.0] {
+                let x = offset + position
+                box(x, 119, 18, 18, gold); box(x + 2, 121, 14, 2, .white.opacity(0.5))
+                box(x + 7, 123, 6, 3, soil); box(x + 10, 126, 3, 3, soil); box(x + 7, 129, 3, 2, soil); box(x + 7, 133, 3, 2, soil)
+            }
+            for position in [280.0, 500.0] {
+                let x = offset + position
+                box(x - 12, 158, 24, 30, grass); box(x - 16, 150, 32, 10, grass)
+                box(x - 8, 161, 4, 27, .white.opacity(0.25)); box(x + 8, 161, 4, 27, .black.opacity(0.25))
+            }
+            for j in 0..<8 {
+                let x = offset + 115 + Double(j) * 48
+                let pulse = band(f, j * 8, gain)
+                box(x - 2, 92 - pulse * 9, 6, 10, gold)
+                box(x - 4, 90 - pulse * 9, 10, 14, gold.opacity(glow * (0.12 + energy * 0.3)))
+            }
+            box(offset + 610, 76, 3, 112, .white)
+            box(offset + 589, 80, 21, 14, colors[0]); box(offset + 606, 71, 10, 6, gold)
+        }
+        var jump = 0.0
+        for obstacle in [280.0, 500.0] {
+            let distance = abs(travel - obstacle)
+            if distance < 64 { jump = max(jump, 86 * (1 - pow(distance / 64, 2))) }
+        }
+        let step = Int(t * 10) % 2 == 0 ? -1.0 : 1.0
+        let bottom = 188 - jump
+        for (row, pixels) in marioSprite.enumerated() {
+            for (column, pixel) in pixels.enumerated() {
+                let color: Color
+                switch pixel {
+                case "R": color = .red
+                case "B": color = Color(red: 0.12, green: 0.27, blue: 0.85)
+                case "S": color = Color(red: 1, green: 0.73, blue: 0.46)
+                case "K": color = Color(red: 0.22, green: 0.12, blue: 0.08)
+                case "Y": color = gold
+                default: continue
+                }
+                let stride = row > 12 && jump == 0 ? step * (column < 6 ? -1 : 1) : 0
+                box(heroX + Double(column - 6) * 2 + stride, bottom - 32 + Double(row) * 2, 2, 2, color)
+            }
         }
     }
 
@@ -95,11 +240,9 @@ enum VisualRenderer {
             let star = CGRect(x: abs(x) * s.width, y: abs(y) * s.height, width: r * 2, height: r * 2)
             c.fill(Path(ellipseIn: star), with: .color(colors[2].opacity(0.18 + 0.3 * (0.5 + 0.5 * sin(t * 0.4 + seed)))))
         }
-        let segments = Int(48 + detail * 48)
+        let segments = min(96, max(48, Int(48 + detail * 48)))
         // Back-to-front ordering gives the ring a solid inner surface.
-        let order = (0..<segments).sorted {
-            sin(Double($0) / Double(segments) * .pi * 2) < sin(Double($1) / Double(segments) * .pi * 2)
-        }
+        let order = haloOrders[segments - 48]
         for i in order {
             let a = Double(i) / Double(segments) * .pi * 2
             let b = Double(i + 1) / Double(segments) * .pi * 2

@@ -1,8 +1,8 @@
 # Afterglow
 
-A native music-visualizer studio for **iPhone, iPad, and Mac**, with eleven visualizers, five original palettes, three Tron colors, and clear source-mode labels.
+A native music-visualizer studio for **iPhone, iPad, and Mac**, with thirteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
-This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 22, 2026. Simulator execution and physical-device testing remain unverified; see the [current validation status](#validation-status) below.
+This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 24, 2026. The latest native response-toggle and gallery changes still need runtime verification; see the [current validation status](#validation-status) below.
 
 
 ## Tron theme
@@ -32,13 +32,23 @@ long-running circuit geometry. `AFTERGLOW_TEST_SDK` optionally selects a macOS S
 
 ## Try the visuals immediately
 
-Open **Preview.html** in Safari or Chrome. It runs without a server or a music account. Choose a visualizer, change the palette, or click **+** to play a local audio file with measured audio response. Nothing is uploaded. Use the keyboard’s Escape key to leave immersive mode.
+From this `Afterglow` directory, start a localhost server:
 
-The preview is a browser implementation of the studio, not a screenshot of a compiled native app. It does not run MusicKit or ScreenCaptureKit. Microphone support depends on the browser’s secure-context and permission rules; use the native app if a local-file preview cannot request microphone access.
+```bash
+python3 -m http.server 8765 --bind 127.0.0.1
+```
+
+Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop it. If the port is occupied, use `8766` in both the command and URL. From the repository root, append `--directory Afterglow` to the command.
+
+Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. The choice persists after reload. The horizontal control below the gallery browses all thirteen styles. Escape leaves immersive mode.
+
+No music account, backend, API key, or package installation is required. Python is only used to serve the preview; opening `Preview.html` directly also supports ambient visuals, but localhost is recommended for browser audio permissions. Audio files and microphone samples are processed locally.
+
+The preview is a browser implementation, not the compiled native app. It does not run MusicKit or ScreenCaptureKit. Microphone input requires a supported browser and permission; actual microphone capture was not verified in the Codex in-app browser. Use the native Mac app for the microphone path tested in the validation report.
 
 ## Run the native app on your M-series Mac
 
-1. Install/open **Xcode 16 or newer**, and extract this archive.
+1. Install/open **Xcode 16 or newer** on macOS 14 or newer, then open this checkout.
 2. Open **Afterglow.xcodeproj**. No project generator, package manager, backend, or API secret is required.
 3. Select the **Afterglow-Mac** scheme and **My Mac** as the run destination.
 4. Press **⌘R**. The default Mac configuration uses local signing. If Xcode asks, choose **Sign to Run Locally** in the Mac target’s Signing & Capabilities settings.
@@ -87,6 +97,14 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 
 **Disconnect** stops the app’s Apple Music player and clears its in-memory music lists and queue. To revoke the OS-level authorization, use the system privacy settings for Media & Apple Music. Local imports and preferences are independent of that permission.
 
+## Visual response and gallery browsing
+
+Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. The preference is saved. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all thirteen visualizers.
+
+Rendering reuses cached Halo depth orders and browser frequency-bin ranges. The browser skips visual analysis and rendering while hidden or uses ambient animation when independent; native independent mode avoids publishing analyzer frames unless the source meters are visible. These are reductions in repeated work; no device-specific frame-rate improvement has been measured.
+
+Validated September 24: browser regression tests (including playback continuity, response switching, gallery synchronization, and hidden-page analysis), settings migration/round-trip and geometry tests, DSP tests, and unsigned macOS/iOS Simulator builds passed.
+
 ## Visuals and controls
 
 - **Aurora:** layered flowing light ribbons.
@@ -124,7 +142,7 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 | Core | Portable C FFT and signal processing |
 | Services | MusicKit and sandboxed local collection |
 | Views | Responsive SwiftUI studio, sources, player, settings |
-| Visualizers | Eleven visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
+| Visualizers | Thirteen visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
 | Config | Info plists, entitlements, build settings, privacy manifest |
 | Tests | Deterministic audio-processing, settings-migration, and Tron geometry tests |
 | Scripts | Project regeneration and build checks |
@@ -132,30 +150,35 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 
 There are no third-party app runtime dependencies. `Scripts/generate-project.py` uses standard Python and recreates the checked-in project after adding source files. It also recreates the generated Info plists and entitlements; retain manual edits before regenerating. Python is not needed to open or build the included project.
 
+## UI and audio checks
+
+See the [September 24 UI/audio validation report](Docs/UI-Audio-Validation.md) for verified native microphone and local-file playback, control checks, fixes, and remaining permission/account requirements.
+
 ## Validation status
 
-Local verification completed on September 22, 2026:
+Latest checks completed on September 24, 2026:
 
 | Check | Result |
 | --- | --- |
-| Audio-processing tests | Passed: frequency/RMS at four rates, silence, stereo formats, reset, non-finite input, and concurrent snapshots |
-| Tron tests | Passed: legacy-settings migration, all nine mode/color combinations, 40,000 disc-boundary/continuity samples, 1,200 cycle trails, and bounded circuit growth through 1,000,000 simulated seconds |
-| Native Mac Debug build | Succeeded with Xcode 27, signing disabled |
-| iOS Simulator Debug build | Succeeded with Xcode 27, signing disabled |
+| Audio DSP | Passed: frequency/RMS at four rates, silence, stereo formats, reset, non-finite input, concurrent snapshots |
+| Settings and geometry | Passed: legacy migration, response preference round-trip, Halo/Iron Man persistence, all nine Tron selections, geometry and long-running bounds |
+| Browser logic regressions | Passed: input lifecycle, source-change races, playback controls, response switching without pausing playback, gallery synchronization, hidden-page analysis suppression |
+| Browser interaction | Response toggle, preference persistence after reload, gallery endpoint scrolling; no reported JavaScript errors |
+| Native Mac Debug build | Passed with Xcode selected, signing disabled |
+| iOS Simulator Debug build | Passed with Xcode selected, signing disabled |
+| Native runtime | Earlier locally signed Mac build launched; microphone and local WAV playback were exercised. Latest toggle/scroll changes have not been retested in the native app. |
 
-These results cover the local working tree, including the test-script fix. The
-initial build attempt used Command Line Tools; selecting the installed Xcode with
-`DEVELOPER_DIR` resolved that build setup issue. Xcode still reported that the
-simulator runtime service was unavailable, so compilation does not establish that
-the app runs in a simulator.
-
-Simulator execution, physical-device testing, and runtime checks for MusicKit
-authorization/playback, microphone input, and Mac system-audio capture remain
-outstanding. Follow the [device checklist](Docs/Device-Checklist.md) before distribution.
+Compilation and simulated browser regression tests do not establish device or account behavior. Browser microphone capture, Mac system-audio capture, configured MusicKit playback, physical-device checks, and sustained performance remain open. See the [UI/audio report](Docs/UI-Audio-Validation.md) and [device checklist](Docs/Device-Checklist.md).
 
 ## Verification commands
 
 Run these commands from the `Afterglow` directory.
+
+Browser control/audio logic tests, with Node.js installed (no npm packages required):
+
+```bash
+node Tests/test_preview.cjs
+```
 
 Portable signal-processing tests, on macOS or Linux with a C compiler:
 
@@ -193,3 +216,11 @@ The build script compiles both the native Mac app and the iOS simulator app with
 - [Spotify developer policy](https://developer.spotify.com/policy)
 
 Provider behavior and requirements were checked against the linked documentation on September 21, 2026. Recheck provider requirements before distribution.
+
+## Super Mario visualizer
+
+Choose **Super Mario** for a pixel-art Mario running through a looping side-scrolling level, jumping over green pipes, passing question blocks and coins, and reaching a flag before the next loop. Coins respond to audio energy when **React to audio** is enabled; independent mode keeps the level moving without measured input. Motion speed, pause, favorites, immersive mode, and Reduce Motion use the existing controls. The selected palette colors the level flag. This is an animated visualizer, not a playable game.
+
+## Space Flight visualizer
+
+Choose **Space Flight** for a first-person trip through a starfield. The camera banks and climbs while ringed planets and other ships approach and pass beside the cockpit. Automatic evasive paths keep obstacles away from the center flight corridor. Audio energy lengthens star trails and ship engine plumes; independent mode uses ambient animation. Palette, speed, glow, detail, pause, Reduce Motion, and immersive controls apply. This is an automatic visualizer, not a piloted game.

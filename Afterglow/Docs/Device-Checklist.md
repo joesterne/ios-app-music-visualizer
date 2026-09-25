@@ -38,7 +38,7 @@ Run after a successful Xcode build. These checks were **not** executed on an App
 
 ## Visuals and power
 
-- Open each of eight styles, all five palettes, min/max sensitivity, speed, glow, and detail.
+- Open each of eleven styles, all five palettes, min/max sensitivity, speed, glow, and detail.
 - Check 30/60 fps, Reduced Motion, favorites persistence, immersive mode, Escape, and native macOS full-screen transitions.
 - Profile a sustained session using Instruments for audio dropouts, Canvas time, thermal behavior, and main-thread hitches.
 - Test import of a large file while the UI stays responsive; file copying runs off the main actor.

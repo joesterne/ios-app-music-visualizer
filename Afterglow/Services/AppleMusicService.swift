@@ -91,11 +91,11 @@ final class AppleMusicService: ObservableObject {
         try await player.play()
     }
     func toggle() async throws {
-        guard configured, authorized else { return }
+        guard configured, authorized else { throw AfterglowError.message("Open Music Sources and connect Apple Music before using playback controls.") }
         if isPlaying { player.pause() } else { try await player.play() }
     }
     func skip(forward: Bool) async throws {
-        guard configured, authorized else { return }
+        guard configured, authorized else { throw AfterglowError.message("Open Music Sources and connect Apple Music before using playback controls.") }
         if forward { try await player.skipToNextEntry() } else { try await player.skipToPreviousEntry() }
     }
     func pause() { if configured { player.pause() } }
