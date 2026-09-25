@@ -26,7 +26,7 @@ final class LocalAudioPlayer {
         player.volume = volume
     }
     func load(_ url: URL) throws {
-        stop()
+        clear()
         let next = try AVAudioFile(forReading: url)
         guard next.length > 0, next.processingFormat.sampleRate > 0 else {
             throw AfterglowError.message("This audio file has no playable samples.")
