@@ -21,7 +21,13 @@ and browser preview, using the existing palette and motion controls.
 Choose **Iron Man** for a white-blue arc reactor, rotating red/gold armor rings,
 and audio-reactive HUD accents. Available in the native gallery and browser preview.
 
-## Validation status
+## Yosemite, Duo, and local preferences
+
+This branch adds Yosemite scenery, adaptive Duo layouts, explicit local preference Save/Restore/Reset/Forget, JSON backups in the browser, and performance/stability improvements. Existing Tron, Halo, and Iron Man scenes are preserved, bringing this branch to twelve visualizers. Open `Afterglow/Duo-Demo.html` for the interactive demo.
+
+The integrated update passed 95 DOM interaction assertions, preview scheduling and Duo-wrapper tests, C audio tests, and Swift syntax/project checks in Linux. Native compilation and device checks for this update remain pending; run `Afterglow/Scripts/build-apple.sh` on a Mac with Xcode 27.1 or newer. Earlier native build results below apply to the earlier revision only.
+
+## Earlier validation status
 
 Local verification completed on September 22, 2026:
 

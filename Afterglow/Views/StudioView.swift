@@ -4,40 +4,13 @@ import UniformTypeIdentifiers
 struct StudioView: View {
     @EnvironmentObject private var model: StudioModel
     @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var visualClock = VisualizerClock()
     var body: some View {
         GeometryReader { geometry in
             let wide = geometry.size.width > 1000
             ZStack {
                 StudioTheme.background.ignoresSafeArea()
-                if model.immersive {
-                    ImmersiveView()
-                } else {
-                    VStack(spacing: 0) {
-                        topBar(wide: wide)
-                        Rectangle().fill(StudioTheme.line).frame(height: 1)
-                        HStack(spacing: 0) {
-                            if wide {
-                                SourceSidebar().frame(width: 220)
-                                Rectangle().fill(StudioTheme.line).frame(width: 1)
-                            }
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: 24) {
-                                    stageHeader
-                                    visualStage(height: wide ? max(270, min(530, geometry.size.height - 360)) : min(430, max(260, geometry.size.width * 0.84)))
-                                    if model.settings.style == .tron { TronControls() }
-                                    gallery
-                                }
-                                .padding(wide ? 28 : 20)
-                            }
-                            if geometry.size.width > 1350 {
-                                Rectangle().fill(StudioTheme.line).frame(width: 1)
-                                ScrollView { InspectorView().padding(24) }.frame(width: 260)
-                            }
-                        }
-                        Rectangle().fill(StudioTheme.line).frame(height: 1)
-                        PlayerBar(compact: geometry.size.width < 650)
-                    }
-                }
+                workspace(size: geometry.size, wide: wide)
             }
             .tint(model.settings.accent)
             .preferredColorScheme(.dark)
@@ -49,11 +22,50 @@ struct StudioView: View {
             }
             .sheet(isPresented: $model.showSources) { SourceSheet() }
             .sheet(isPresented: $model.showSettings) { SettingsSheet() }
-            .alert("Afterglow", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
+            .alert("Afterglow", isPresented: Binding(get: { model.error != nil && !model.showSources }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
             .onChange(of: scenePhase) { _, phase in Task { await model.setActive(phase == .active) } }
             .onChange(of: model.immersive) { _, _ in Task { await model.setActive(scenePhase == .active) } }
+        }
+    }
+    @ViewBuilder private func workspace(size: CGSize, wide: Bool) -> some View {
+        #if os(iOS)
+        if #available(iOS 27.1, *) { DuoWorkspaceView(clock: visualClock) }
+        else { classicWorkspace(size: size, wide: wide) }
+        #else
+        classicWorkspace(size: size, wide: wide)
+        #endif
+    }
+    @ViewBuilder private func classicWorkspace(size: CGSize, wide: Bool) -> some View {
+        if model.immersive {
+            ImmersiveView(clock: visualClock)
+        } else {
+            VStack(spacing: 0) {
+                topBar(wide: wide)
+                Rectangle().fill(StudioTheme.line).frame(height: 1)
+                HStack(spacing: 0) {
+                    if wide {
+                        SourceSidebar().frame(width: 220)
+                        Rectangle().fill(StudioTheme.line).frame(width: 1)
+                    }
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 24) {
+                            stageHeader
+                            visualStage(height: wide ? max(270, min(530, size.height - 360)) : min(430, max(180, min(size.width * 0.76, size.height * 0.58))))
+                            if model.settings.style == .tron { TronControls() }
+                            gallery
+                        }
+                        .padding(wide ? 28 : 20)
+                    }
+                    if size.width > 1350 {
+                        Rectangle().fill(StudioTheme.line).frame(width: 1)
+                        ScrollView { InspectorView().padding(24) }.frame(width: 260)
+                    }
+                }
+                Rectangle().fill(StudioTheme.line).frame(height: 1)
+                PlayerBar(compact: size.width < 650)
+            }
         }
     }
     private func topBar(wide: Bool) -> some View {
@@ -92,8 +104,10 @@ struct StudioView: View {
     }
     private func visualStage(height: Double) -> some View {
         ZStack {
-            VisualizerCanvas(style: model.settings.style, palette: model.settings.palette, frame: model.frame,
-                             reactive: model.source.reactive, settings: model.settings, paused: model.motionPaused)
+            VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
+                             analyzer: model.analyzer, playing: model.isPlaying,
+                             reactive: model.source.reactive, settings: model.settings, paused: model.motionPaused, clock: visualClock)
+                .equatable()
             VStack(alignment: .leading) {
                 HStack {
                     SignalBadge()
@@ -126,7 +140,7 @@ struct StudioView: View {
             HStack {
                 Text("VISUALIZERS").font(.system(size: 10, weight: .semibold, design: .monospaced)).tracking(2)
                 Spacer()
-                Text(String(format: "%02d / CHOOSE YOUR MOOD", VisualizerStyle.allCases.count)).font(.system(size: 8, design: .monospaced)).tracking(1).foregroundStyle(StudioTheme.muted)
+                Text("\(VisualizerStyle.allCases.count) / CHOOSE YOUR MOOD").font(.system(size: 8, design: .monospaced)).tracking(1).foregroundStyle(StudioTheme.muted)
             }
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -143,8 +157,9 @@ struct VisualizerCard: View {
     var body: some View {
         Button { model.settings.style = style } label: {
             VStack(alignment: .leading, spacing: 9) {
-                VisualizerCanvas(style: style, palette: model.settings.palette, frame: .silent, reactive: false,
+                VisualizerCanvas(style: style, palette: model.settings.palette, reactive: false,
                                  settings: model.settings, preview: true)
+                    .equatable()
                     .frame(width: 132, height: 77).clipShape(RoundedRectangle(cornerRadius: 10))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(
                         model.settings.style == style ? model.settings.accent.opacity(0.8) : StudioTheme.line,
@@ -220,10 +235,13 @@ struct SignalBadge: View {
 struct ImmersiveView: View {
     @EnvironmentObject private var model: StudioModel
     @State private var showControls = true
+    var clock: VisualizerClock? = nil
     var body: some View {
         ZStack {
-            VisualizerCanvas(style: model.settings.style, palette: model.settings.palette, frame: model.frame,
-                             reactive: model.source.reactive, settings: model.settings, paused: model.motionPaused)
+            VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
+                             analyzer: model.analyzer, playing: model.isPlaying,
+                             reactive: model.source.reactive, settings: model.settings, paused: model.motionPaused, clock: clock)
+                .equatable()
                 .ignoresSafeArea().contentShape(Rectangle()).onTapGesture { showControls.toggle() }
             if showControls {
                 VStack {

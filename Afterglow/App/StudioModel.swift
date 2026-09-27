@@ -5,9 +5,10 @@ import SwiftUI
 
 @MainActor
 final class StudioModel: ObservableObject {
-    @Published var settings = VisualSettings.load() { didSet { settings.save() } }
+    @Published var settings = VisualSettings()
+    @Published private(set) var hasSavedPreferences = false
+    @Published private(set) var preferenceStatus = "Save this setup to restore it at your next launch."
     @Published private(set) var source: AudioSource = .ambient
-    @Published private(set) var frame = AudioFrame.silent
     @Published private(set) var tracks = LocalLibrary.read()
     @Published private(set) var selectedTrack: UUID?
     @Published private(set) var isPlaying = false
@@ -25,7 +26,7 @@ final class StudioModel: ObservableObject {
     @Published var motionPaused = false
     @Published var volume: Double = 0.8 { didSet { local.volume = Float(volume) } }
     let apple = AppleMusicService()
-    private let analyzer = AudioAnalyzer()
+    let analyzer = AudioAnalyzer()
     private lazy var local = LocalAudioPlayer(analyzer: analyzer)
     private lazy var microphone = MicrophoneCapture(analyzer: analyzer)
     #if os(macOS)
@@ -34,15 +35,21 @@ final class StudioModel: ObservableObject {
     private var ticker: AnyCancellable?
     private var lifecycleObservers: [NSObjectProtocol] = []
     private var active = true
-    private var ticks = 0
+    private var sourceRevision = 0
 
     init() {
+        if let saved = PreferenceStore.load() {
+            hasSavedPreferences = true
+            settings = saved.settings; volume = saved.volume; motionPaused = saved.motionPaused
+            preferenceStatus = "Loaded preferences saved on this device."
+        } else { settings = VisualSettings.load() }
+        local.volume = Float(volume)
         local.onFinished = { [weak self] in Task { @MainActor in await self?.advanceLocal(forward: true, auto: true) } }
         #if os(macOS)
         system.onStopped = { [weak self] message in
             guard let self, self.source == .systemAudio else { return }
             self.error = "System audio capture stopped: \(message)"
-            self.isPlaying = false; self.frame = .silent
+            self.isPlaying = false; self.analyzer.reset()
         }
         #else
         lifecycleObservers.append(NotificationCenter.default.addObserver(
@@ -60,26 +67,31 @@ final class StudioModel: ObservableObject {
             Task { @MainActor in await self?.handleAudioInterruption() }
         })
         #endif
-        ticker = Timer.publish(every: 1.0 / 30, on: .main, in: .common).autoconnect().sink { [weak self] _ in
-            self?.refresh()
-        }
     }
     var modeLabel: String { source.reactive ? (isPlaying ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION" }
+    var hasPlayableQueue: Bool {
+        source == .local ? selectedTrack != nil && !tracks.isEmpty : source == .appleMusic && apple.hasCurrentEntry
+    }
     var modeDescription: String {
         source.reactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
     }
-    var artworkURL: URL? { source == .appleMusic ? apple.artworkURL : nil }
+    @Published private(set) var artworkURL: URL?
 
     func changeSource(_ next: AudioSource) async {
         guard !busy, next != source else { return }
-        busy = true; defer { busy = false }
+        busy = true; defer { busy = false; refreshMetadata() }
+        do { try await prepareSource(next) }
+        catch { self.error = error.localizedDescription; source = .ambient; isPlaying = false }
+    }
+    private func prepareSource(_ next: AudioSource) async throws {
+        guard next != source else { return }
+        sourceRevision += 1
         local.stop(); apple.pause(); microphone.stop()
         #if os(macOS)
         await system.stop()
         #endif
-        analyzer.reset(); frame = .silent
+        analyzer.reset()
         source = next; isPlaying = false; position = 0; duration = 0
-        do {
             switch next {
             case .microphone:
                 try await microphone.start(); isPlaying = true
@@ -89,14 +101,13 @@ final class StudioModel: ObservableObject {
                 #endif
             default: break
             }
-        } catch {
-            self.error = error.localizedDescription
-            source = .ambient
-        }
-        refreshMetadata()
+        #if os(iOS)
+        if !active { microphone.stop(); isPlaying = false }
+        #endif
     }
     func importFiles(_ urls: [URL]) async {
         guard !importing else { return }
+        let revision = sourceRevision
         importing = true; defer { importing = false }
         var first: LocalTrack?
         var failures: [String] = []
@@ -107,22 +118,27 @@ final class StudioModel: ObservableObject {
             } catch { failures.append(error.localizedDescription) }
         }
         do { try LocalLibrary.save(tracks) } catch { failures.append(error.localizedDescription) }
-        if let first { await playLocal(first) }
+        if let first, revision == sourceRevision { await playLocal(first) }
         if !failures.isEmpty { error = failures.joined(separator: "\n\n") }
     }
     func playLocal(_ track: LocalTrack) async {
         guard !busy else { return }
-        await changeSource(.local)
+        sourceRevision += 1
+        busy = true; defer { busy = false; refreshMetadata() }
         do {
+            try await prepareSource(.local)
             analyzer.reset()
             try local.load(track.url)
             selectedTrack = track.id
             try local.play()
-            refreshMetadata()
-        } catch { self.error = error.localizedDescription }
+            #if os(iOS)
+            if !active { local.pause() }
+            #endif
+        } catch { local.clear(); selectedTrack = nil; self.error = error.localizedDescription }
     }
     func removeTrack(_ track: LocalTrack) {
-        if selectedTrack == track.id { local.clear(); selectedTrack = nil; isPlaying = false; frame = .silent }
+        guard !busy, !importing else { return }
+        if selectedTrack == track.id { local.clear(); selectedTrack = nil; isPlaying = false }
         do {
             try LocalLibrary.remove(track)
             tracks.removeAll { $0.id == track.id }
@@ -132,20 +148,35 @@ final class StudioModel: ObservableObject {
     }
     func playApple(_ song: Song, queue: [Song], catalog: Bool) async {
         guard !busy else { return }
-        await changeSource(.appleMusic)
-        busy = true; defer { busy = false }
-        do { try await apple.play(song, within: queue, fromCatalog: catalog) }
+        sourceRevision += 1
+        busy = true; defer { busy = false; refreshMetadata() }
+        do {
+            try await prepareSource(.appleMusic)
+            try await apple.play(song, within: queue, fromCatalog: catalog)
+            #if os(iOS)
+            if !active { apple.pause() }
+            #endif
+        }
         catch { self.error = error.localizedDescription }
         refreshMetadata()
     }
     func togglePlayback() async {
         guard !busy else { return }
+        sourceRevision += 1
+        if source == .appleMusic && (!apple.configured || !apple.authorized || !apple.hasCurrentEntry) {
+            showSources = true; return
+        }
+        if source == .local && selectedTrack == nil {
+            if let track = tracks.first { await playLocal(track) }
+            else { showImporter = true }
+            return
+        }
+        busy = true; defer { busy = false; refreshMetadata() }
         do {
             switch source {
             case .local:
                 if tracks.isEmpty { showImporter = true; return }
-                if selectedTrack == nil, let track = tracks.first { await playLocal(track) }
-                else if local.isPlaying { local.pause(); analyzer.reset(); frame = .silent }
+                if local.isPlaying { local.pause(); analyzer.reset() }
                 else { try local.play() }
             case .appleMusic: try await apple.toggle()
             case .microphone, .systemAudio:
@@ -154,9 +185,8 @@ final class StudioModel: ObservableObject {
                     #if os(macOS)
                     await system.stop()
                     #endif
-                    isPlaying = false; analyzer.reset(); frame = .silent
+                    isPlaying = false; analyzer.reset()
                 } else {
-                    busy = true; defer { busy = false }
                     if source == .microphone { try await microphone.start() }
                     else {
                         #if os(macOS)
@@ -164,6 +194,9 @@ final class StudioModel: ObservableObject {
                         #endif
                     }
                     isPlaying = true
+                    #if os(iOS)
+                    if !active { microphone.stop(); isPlaying = false }
+                    #endif
                 }
             default: motionPaused.toggle()
             }
@@ -171,8 +204,11 @@ final class StudioModel: ObservableObject {
         refreshMetadata()
     }
     func skip(forward: Bool) async {
+        guard !busy else { return }
         if source == .local { await advanceLocal(forward: forward, auto: false) }
         else if source == .appleMusic {
+            guard apple.authorized else { showSources = true; return }
+            busy = true; defer { busy = false; refreshMetadata() }
             do { try await apple.skip(forward: forward) } catch { self.error = error.localizedDescription }
         }
     }
@@ -181,9 +217,10 @@ final class StudioModel: ObservableObject {
         let next = index + (forward ? 1 : -1)
         if tracks.indices.contains(next) { await playLocal(tracks[next]) }
         else if !auto, !tracks.isEmpty { await playLocal(forward ? tracks[0] : tracks[tracks.count - 1]) }
-        else { analyzer.reset(); frame = .silent; refreshMetadata() }
+        else { analyzer.reset(); refreshMetadata() }
     }
     func seek(_ seconds: Double) {
+        guard !busy, seconds.isFinite else { return }
         do {
             if source == .local { try local.seek(to: seconds) }
             else if source == .appleMusic { apple.seek(to: seconds) }
@@ -194,43 +231,76 @@ final class StudioModel: ObservableObject {
         #if os(iOS)
         if !value {
             // This foreground visualizer intentionally does not request background microphone capture.
-            if source == .microphone { microphone.stop(); isPlaying = false; frame = .silent }
+            if source == .microphone { microphone.stop(); isPlaying = false }
             local.pause(); apple.pause()
-            analyzer.reset(); frame = .silent
+            analyzer.reset()
         }
         UIApplication.shared.isIdleTimerDisabled = value && immersive
         #endif
+        refreshMetadata()
     }
     private func handleAudioInterruption() async {
         local.pause(); apple.pause()
         if source == .microphone { microphone.stop(); isPlaying = false }
-        analyzer.reset(); frame = .silent
+        analyzer.reset()
         refreshMetadata()
     }
-    private func refresh() {
-        guard active else { return }
-        if source.reactive && isPlaying { frame = analyzer.snapshot() }
-        ticks += 1
-        if ticks % 6 == 0 { refreshMetadata() }
+    // Only playback metadata polls the model. Audio snapshots belong to the
+    // visualizer's timeline, so they cannot invalidate the entire studio.
+    private func updateTicker() {
+        let needed = active && (source == .local || source == .appleMusic)
+        guard needed else { ticker?.cancel(); ticker = nil; return }
+        guard ticker == nil else { return }
+        ticker = Timer.publish(every: 0.2, on: .main, in: .common).autoconnect().sink { [weak self] _ in
+            self?.refreshMetadata()
+        }
+    }
+    private func assign<Value: Equatable>(_ value: Value, to keyPath: ReferenceWritableKeyPath<StudioModel, Value>) {
+        if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
     }
     private func refreshMetadata() {
+        updateTicker()
+        assign(source == .appleMusic ? apple.artworkURL : nil, to: \.artworkURL)
         switch source {
         case .local:
-            isPlaying = local.isPlaying; position = local.position; duration = local.duration
-            title = tracks.first(where: { $0.id == selectedTrack })?.title ?? "Import your first track"
-            subtitle = "Local audio • measured spectrum"
+            assign(local.isPlaying, to: \.isPlaying); assign(local.position, to: \.position); assign(local.duration, to: \.duration)
+            assign(tracks.first(where: { $0.id == selectedTrack })?.title ?? "Import your first track", to: \.title)
+            assign("Local audio • measured spectrum", to: \.subtitle)
         case .appleMusic:
-            isPlaying = apple.isPlaying; position = apple.position; duration = apple.duration
-            title = apple.title; subtitle = apple.artist
-        case .microphone: title = "The sound around you"; subtitle = "Live input • no recording saved"
-        case .systemAudio: title = "Your Mac, in color"; subtitle = "System audio • no recording saved"
-        case .spotify: title = "Spotify companion"; subtitle = "Playback stays in Spotify • ambient visuals"
-        case .other: title = "Bring your own soundtrack"; subtitle = "Playback stays in your music app"
-        case .ambient: title = "Make room for the music."; subtitle = "Choose a source. Find your visual."
+            assign(apple.isPlaying, to: \.isPlaying); assign(apple.position, to: \.position); assign(apple.duration, to: \.duration)
+            assign(apple.title, to: \.title); assign(apple.artist, to: \.subtitle)
+        case .microphone: assign("The sound around you", to: \.title); assign("Live input • no recording saved", to: \.subtitle)
+        case .systemAudio: assign("Your Mac, in color", to: \.title); assign("System audio • no recording saved", to: \.subtitle)
+        case .spotify: assign("Spotify companion", to: \.title); assign("Playback stays in Spotify • ambient visuals", to: \.subtitle)
+        case .other: assign("Bring your own soundtrack", to: \.title); assign("Playback stays in your music app", to: \.subtitle)
+        case .ambient: assign("Make room for the music.", to: \.title); assign("Choose a source. Find your visual.", to: \.subtitle)
         }
     }
     func toggleFavorite(_ style: VisualizerStyle) {
         if settings.favorites.contains(style) { settings.favorites.removeAll { $0 == style } }
         else { settings.favorites.append(style) }
+    }
+
+    func savePreferences() {
+        do {
+            try PreferenceStore.save(SavedPreferences(settings: settings, volume: volume, motionPaused: motionPaused))
+            hasSavedPreferences = true
+            preferenceStatus = "Preferences saved locally. They will load at your next launch."
+        } catch { preferenceStatus = "Could not save preferences: \(error.localizedDescription)" }
+    }
+    func restorePreferences() {
+        guard let saved = PreferenceStore.load() else {
+            hasSavedPreferences = false; preferenceStatus = "No valid saved preferences on this device."; return
+        }
+        settings = saved.settings; volume = saved.volume; motionPaused = saved.motionPaused
+        preferenceStatus = "Restored your locally saved preferences."
+    }
+    func resetPreferences() {
+        settings = .init(); volume = 0.8; motionPaused = false
+        preferenceStatus = "Defaults restored. Your saved preferences are unchanged."
+    }
+    func forgetPreferences() {
+        PreferenceStore.forget(); hasSavedPreferences = false
+        preferenceStatus = "Saved preferences removed. Current settings and audio files are unchanged."
     }
 }
