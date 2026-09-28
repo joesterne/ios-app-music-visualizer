@@ -1,6 +1,6 @@
 # Afterglow
 
-A native music-visualizer studio for **iPhone, iPad, and Mac**, with fourteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
+A native music-visualizer studio for **iPhone, iPad, and Mac**, with fifteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
 This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 24, 2026. The latest native response-toggle and gallery changes still need runtime verification; see the [current validation status](#validation-status) below.
 
@@ -54,7 +54,7 @@ python3 -m http.server 8765 --bind 127.0.0.1
 
 Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop it. If the port is occupied, use `8766` in both the command and URL. From the repository root, append `--directory Afterglow` to the command.
 
-Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. Use Save preferences locally to retain this choice after reload. The horizontal control below the gallery browses all fourteen styles. Escape leaves immersive mode.
+Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. Use Save preferences locally to retain this choice after reload. The horizontal control below the gallery browses all fifteen styles. Escape leaves immersive mode.
 
 No music account, backend, API key, or package installation is required. Python is only used to serve the preview; opening `Preview.html` directly also supports ambient visuals, but localhost is recommended for browser audio permissions. Audio files and microphone samples are processed locally.
 
@@ -113,13 +113,15 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 
 ## Visual response and gallery browsing
 
-Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. Use Save preferences locally to retain the preference. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all fourteen visualizers.
+Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. Use Save preferences locally to retain the preference. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all fifteen visualizers.
 
 Rendering reuses cached Halo depth orders and browser frequency-bin ranges. The browser skips visual analysis and rendering while hidden or uses ambient animation when independent; native independent mode avoids publishing analyzer frames unless the source meters are visible. These are reductions in repeated work; no device-specific frame-rate improvement has been measured.
 
 Validated September 24: browser regression tests (including playback continuity, response switching, gallery synchronization, and hidden-page analysis), settings migration/round-trip and geometry tests, DSP tests, and unsigned macOS/iOS Simulator builds passed.
 
 ## Visuals and controls
+
+- **Fallout:** two numbered, toothed vault doors roll along a hazard-marked rail behind twin Pip-Boy-style wrist terminals. Their green CRT screens type looping code, sweep scanlines, and display audio-responsive traces. Speed and Pause/Reduce Motion control movement; sensitivity and glow control the signal and phosphor. The scene keeps its olive, amber, and green theme across palette selections. See [scene notes](Docs/Fallout.md).
 
 - **Yosemite:** a cinematic valley overlook with drifting clouds behind the cliffs, moving valley mist, distant birds, and gentle audio-responsive sunlight. See [scene notes](Docs/Yosemite.md).
 - **Aurora:** layered flowing light ribbons.
@@ -157,7 +159,7 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 | Core | Portable C FFT and signal processing |
 | Services | MusicKit, sandboxed local collection, local preference snapshots |
 | Views | Responsive SwiftUI studio, sources, player, settings |
-| Visualizers | Fourteen visualizers and animation scheduling |
+| Visualizers | Fifteen visualizers and animation scheduling |
 | Config | Info plists, entitlements, build settings, privacy manifest |
 | Tests | Audio, browser controls/scheduling, renderer, and native preference regression checks |
 | Web | Editable HTML template, CSS, and JavaScript for the offline preview |

@@ -47,7 +47,7 @@ enum AudioSource: String, CaseIterable, Identifiable {
 }
 
 enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
-    case yosemite, aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan, superMario, spaceFlight
+    case yosemite, aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan, superMario, spaceFlight, fallout
     var id: String { rawValue }
     var title: String { self == .spaceFlight ? "Space Flight" : self == .superMario ? "Super Mario" : self == .ironMan ? "Iron Man" : rawValue.capitalized }
     var subtitle: String {
@@ -65,6 +65,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .ironMan: "Power the arc reactor"
         case .superMario: "Run, jump, and follow the music"
         case .spaceFlight: "Bank past planets. Slip between starships."
+        case .fallout: "Vault doors. Green phosphor. Wasteland radio."
         case .yosemite: "Clouds over the valley"
         }
     }
@@ -83,6 +84,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .ironMan: "bolt.circle"
         case .superMario: "gamecontroller"
         case .spaceFlight: "airplane"
+        case .fallout: "gearshape.2"
         case .yosemite: "cloud.sun"
         }
     }

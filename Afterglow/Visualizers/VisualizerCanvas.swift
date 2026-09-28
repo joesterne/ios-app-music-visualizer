@@ -114,12 +114,125 @@ enum VisualRenderer {
         case .bloom: bloom(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .halo: halo(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .ironMan: ironMan(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .fallout: fallout(&context, size, frame, time, sensitivity, glow, detail)
         case .superMario: mario(&context, size, frame, time, colors, sensitivity, glow)
         case .spaceFlight: spaceFlight(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .tron: break
         case .yosemite: break // Static backdrop + transparent animated scenery above.
         }
     }
+
+    // Fallout scene uses fixed pools and the shared clock: no timers or random state.
+    private static func fallout(_ context: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
+                                _ t: Double, _ gain: Double, _ glow: Double, _ detail: Double) {
+        var c = context
+        c.blendMode = .normal
+        let w = s.width, h = s.height, unit = min(w, h)
+        let phase = (max(0, t) * 0.16).truncatingRemainder(dividingBy: .pi * 2)
+        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        let green = Color(hex: 0x9CF776), amber = Color(hex: 0xE2BD69)
+        let floor = h * 0.56, radius = min(w * 0.24, h * 0.23)
+        func box(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ width: Double, _ height: Double, _ color: Color) {
+            g.fill(Path(CGRect(x: x, y: y, width: width, height: height)), with: .color(color))
+        }
+        func line(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ x2: Double, _ y2: Double, _ color: Color, _ width: Double = 1) {
+            var path = Path(); path.move(to: CGPoint(x: x, y: y)); path.addLine(to: CGPoint(x: x2, y: y2))
+            g.stroke(path, with: .color(color), lineWidth: width)
+        }
+        func ring(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ r: Double, _ color: Color, _ width: Double = 1) {
+            g.stroke(Path(ellipseIn: CGRect(x: x-r, y: y-r, width: r*2, height: r*2)), with: .color(color), lineWidth: width)
+        }
+        func label(_ g: inout GraphicsContext, _ value: String, _ x: Double, _ y: Double, _ size: Double, _ color: Color, _ anchor: UnitPoint = .leading) {
+            g.draw(Text(value).font(.system(size: size, weight: .medium, design: .monospaced)).foregroundStyle(color), at: CGPoint(x: x, y: y), anchor: anchor)
+        }
+        let bounds = Path(CGRect(origin: .zero, size: s))
+        c.fill(bounds, with: .radialGradient(Gradient(colors: [Color(hex: 0x3D5145), Color(hex: 0x091312)]), center: CGPoint(x: w*0.5, y: h*0.35), startRadius: 0, endRadius: max(w,h)*0.7))
+        for i in 0..<9 {
+            let x = w * Double(i) / 8
+            line(&c,x,0,x,floor,Color(hex: 0x718173).opacity(0.16),2)
+            for y in [h*0.13,h*0.5] { ring(&c,x+6,y,2,Color(hex: 0x88917C).opacity(0.4)) }
+        }
+        line(&c,0,h*0.14,w,h*0.14,amber.opacity(0.3),3)
+        line(&c,0,h*0.155,w,h*0.155,Color(hex: 0x080E0D),5)
+        label(&c,"VAULT-TEC / SUBLEVEL 101",w*0.07,h*0.075,max(6,unit*0.018),amber)
+        label(&c,"REACTOR ONLINE",w*0.93,h*0.075,max(6,unit*0.016),green,.trailing)
+        func door(_ x: Double, _ r: Double, _ number: String, _ opacity: Double) {
+            var g = c; g.opacity = opacity
+            g.translateBy(x: x,y: floor-r); g.rotate(by: .radians(x/r))
+            var gear = Path()
+            for i in 0..<96 {
+                let a = Double(i)/96 * .pi*2, rr = r * (i%8<4 ? 1 : 0.9)
+                let point = CGPoint(x: cos(a)*rr, y: sin(a)*rr)
+                if i == 0 { gear.move(to: point) } else { gear.addLine(to: point) }
+            }
+            gear.closeSubpath();g.fill(gear,with:.color(Color(hex:0x49564E)));g.stroke(gear,with:.color(Color(hex:0xC3B87C)),lineWidth:r*0.035)
+            ring(&g,0,0,r*0.8,Color(hex:0x111E1A),r*0.12)
+            ring(&g,0,0,r*0.72,Color(hex:0x879078),r*0.018)
+            for i in 0..<12 {
+                let a = Double(i) * .pi/6
+                line(&g,cos(a)*r*0.82,sin(a)*r*0.82,cos(a)*r*0.94,sin(a)*r*0.94,i%2 == 0 ? Color(hex:0x1B2420) : amber,r*0.075)
+                ring(&g,cos(a)*r*0.65,sin(a)*r*0.65,r*0.028,Color(hex:0xBCC0A0),r*0.018)
+            }
+            for i in 0..<6 {
+                let a = Double(i) * .pi/3
+                line(&g,cos(a)*r*0.24,sin(a)*r*0.24,cos(a)*r*0.56,sin(a)*r*0.56,Color(hex:0x26382D),r*0.05)
+            }
+            ring(&g,0,0,r*0.51,Color(hex:0x78806A),r*0.025)
+            label(&g,number,0,0,r*0.37,amber,.center)
+            label(&g,"VAULT",0,-r*0.32,r*0.095,Color(hex:0xC8D0AF),.center)
+        }
+        door(w*0.5-sin(phase)*w*0.24,radius*0.64,"76",0.48)
+        door(w*0.5+sin(phase)*w*0.24,radius,"101",1)
+        box(&c,0,floor,w,h-floor,Color(hex:0x111B17))
+        line(&c,0,floor+2,w,floor+2,amber,unit*0.008)
+        line(&c,0,floor+unit*0.035,w,floor+unit*0.035,Color(hex:0x5A684A),unit*0.01)
+        for i in 0..<28 { let x = w*Double(i)/27;line(&c,x,floor+4,x+unit*0.015,floor+unit*0.028,Color(hex:0x8C8146),max(1,unit*0.012)) }
+        func pip(_ cx: Double, _ cy: Double, _ index: Int) {
+            let pw = min(w*0.43,h*0.46), ph = pw*0.64, left = cx-pw/2, top = cy-ph/2
+            box(&c,left+pw*0.21,top-ph*0.1,pw*0.54,ph*1.2,Color(hex:0x242F21))
+            let shell = Path(roundedRect:CGRect(x:left,y:top,width:pw,height:ph),cornerRadius:pw*0.07)
+            c.fill(shell,with:.color(Color(hex:0x69704B)));c.stroke(shell,with:.color(Color(hex:0xA3A77A)),lineWidth:max(1,pw*0.008))
+            let sx = left+pw*0.055, sy = top+ph*0.14, sw = pw*0.72, sh = ph*0.69
+            let glass = Path(roundedRect:CGRect(x:sx,y:sy,width:sw,height:sh),cornerRadius:pw*0.03)
+            c.stroke(glass,with:.color(Color(hex:0x1B2719)),lineWidth:6)
+            var screen = c;screen.clip(to:glass)
+            screen.fill(glass,with:.color(Color(hex:0x061B0C)))
+            screen.fill(glass,with:.radialGradient(Gradient(colors:[green.opacity(0.12+energy*0.2),Color(hex:0x021006)]),center:CGPoint(x:sx+sw*0.45,y:sy+sh*0.4),startRadius:0,endRadius:sw*0.7))
+            let font = sw*0.046, step = sh*0.117
+            let shift = Int((max(0,t)*1.5).truncatingRemainder(dividingBy:Double(falloutCode.count)))
+            var ink = screen;ink.addFilter(.shadow(color:green.opacity(glow),radius:glow*unit*0.004))
+            label(&ink,index == 0 ? "PIP-BOY / STATUS" : "PIP-BOY / RADIO",sx+sw*0.045,sy+sh*0.085,font*1.15,green)
+            for j in 0..<5 {
+                let code = falloutCode[(shift+j+index*4)%falloutCode.count]
+                let reveal = j == 4 ? Int((max(0,t)*1.5).truncatingRemainder(dividingBy:1)*Double(code.count)) : code.count
+                label(&ink,String(code.prefix(reveal)),sx+sw*0.045,sy+sh*0.24+Double(j)*step,font,green)
+            }
+            var trace = Path()
+            for j in 0..<40 {
+                let value = min(1,max(0,Double(f.bands[(j+index*13)%64])*gain))
+                let point = CGPoint(x:sx+sw*(0.04+Double(j)*0.92/39),y:sy+sh*(0.88-value*0.11))
+                if j == 0 { trace.move(to:point) } else { trace.addLine(to:point) }
+            }
+            ink.stroke(trace,with:.color(green),lineWidth:max(1,pw*0.004))
+            if Int(t*2)%2 == 0 { box(&screen,sx+sw*0.045,sy+sh*0.77,font*0.6,2,green) }
+            for y in stride(from:sy,to:sy+sh,by:max(2,unit*0.005)) { box(&screen,sx,y,sw,max(1,unit*0.0015),Color(hex:0x001006).opacity(0.4)) }
+            let sweep = (t*0.1+Double(index)*0.45).truncatingRemainder(dividingBy:1)*sh
+            box(&screen,sx,sy+sweep,sw,sh*0.025,green.opacity(0.09))
+            let dx = left+pw*0.885, dy = top+ph*0.38
+            ring(&c,dx,dy,pw*0.065,Color(hex:0x25341F),pw*0.025);ring(&c,dx,dy,pw*0.047,Color(hex:0xC3C393),pw*0.01)
+            line(&c,dx,dy,dx+pw*0.034*cos(phase),dy+pw*0.034*sin(phase),amber,pw*0.008)
+            for j in 0..<4 { line(&c,left+pw*0.83,top+ph*(0.61+Double(j)*0.048),left+pw*0.95,top+ph*(0.61+Double(j)*0.048),Color(hex:0x293B24),pw*0.012) }
+            box(&c,left+pw*0.84,top+ph*0.12,pw*0.07,ph*0.045,energy>0.3 ? green : amber)
+            label(&c,index == 0 ? "PIP-BOY 3000" : "RADIO / 2077",left+pw*0.08,top+ph*0.92,pw*0.025,Color(hex:0xD9DBAD))
+        }
+        pip(w*0.255,h*0.65,0);pip(w*0.745,h*0.65,1)
+        for i in 0..<Int(10+detail*24) {
+            let x = (Double(i)*0.618033+t*0.007).truncatingRemainder(dividingBy:1)*w
+            let y = (Double(i)*0.381966+t*0.012).truncatingRemainder(dividingBy:1)*h
+            box(&c,x,y,1.2,1.2,Color(hex:0xC6CFA3).opacity(0.22))
+        }
+    }
+    private static let falloutCode = ["> VAULT-TEC OS v.101", "> INITIALIZING PIP-BOY", "0xF0A1  MOV AX, [SIGNAL]", "0xF0A4  AND AX, 0x00FF", "0xF0A8  CALL VAULT_LINK", "> GEIGER COUNTER: ONLINE", "0xF0B2  CMP RADS, LIMIT", "0xF0B8  JLE SAFE_ZONE", "> DOOR SERVO: ENGAGED", "0xF0C0  READ AUDIO_BUS", "0xF0C4  SYNC WAVEFORM", "> WELCOME HOME, WANDERER"]
 
     // Fixed object pools and a time-based camera keep flight smooth and bounded.
     private static func spaceFlight(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,

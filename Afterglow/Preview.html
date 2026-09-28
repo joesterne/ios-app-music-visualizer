@@ -100,7 +100,7 @@ body.immersive .stage{height:100dvh;width:100dvw}
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.']];
+const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.'],['fallout','Fallout','Vault doors. Green phosphor. Wasteland radio.']];
 const palettes={Ultraviolet:['#91a1ff','#cb79ff','#f3b0e6'],Glacier:['#55dcd9','#68b2ff','#c6fff2'],Ember:['#ff9760','#f25d86','#ffe0a3'],Candy:['#ff80c7','#868bff','#57eee0'],Monochrome:['#d1d7e6','#ffffff','#737f99']};
 const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reducedMotion=motionPreference.matches;
 function motionStopped(){return paused||reducedMotion}
@@ -233,6 +233,71 @@ function renderYosemite(canvas,t,small=false){
 }
 // END YOSEMITE RENDERER
 
+// BEGIN FALLOUT RENDERER
+// Fixed pools, time-derived motion, and no random state keep pause/resume deterministic.
+const falloutCode=['> VAULT-TEC OS v.101','> INITIALIZING PIP-BOY','0xF0A1  MOV AX, [SIGNAL]','0xF0A4  AND AX, 0x00FF','0xF0A8  CALL VAULT_LINK','> GEIGER COUNTER: ONLINE','0xF0B2  CMP RADS, LIMIT','0xF0B8  JLE SAFE_ZONE','> DOOR SERVO: ENGAGED','0xF0C0  READ AUDIO_BUS','0xF0C4  SYNC WAVEFORM','> WELCOME HOME, WANDERER'];
+function renderFallout(canvas,t,b,small=false){
+ const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,D=Math.min(W,H);
+ if(W<2||H<2)return;
+ const phase=((Math.max(0,t)*.16)%(Math.PI*2)),energy=small?.22:Math.min(1,Math.max(0,rms*gain*3));
+ const green='#9cf776',amber='#e2bd69',floor=H*.56,r=Math.min(W*.24,H*.23);
+ ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;
+ const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)};
+ const line=(x,y,x2,y2,color,width=1)=>{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()};
+ const ring=(x,y,r,color,width=1)=>{ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()};
+ const text=(value,x,y,size,color,align='left')=>{ctx.font=`${size}px monospace`;ctx.textAlign=align;ctx.textBaseline='middle';ctx.fillStyle=color;ctx.fillText(value,x,y)};
+ box(0,0,W,H,'#101a19');
+ const wash=ctx.createRadialGradient(W*.5,H*.35,0,W*.5,H*.35,Math.max(W,H)*.7);wash.addColorStop(0,'#3d5145');wash.addColorStop(1,'#091312');ctx.fillStyle=wash;ctx.fillRect(0,0,W,H);
+ for(let i=0;i<9;i++){const x=W*i/8;line(x,0,x,floor,'#71817328',2);for(const y of [H*.13,H*.5]){ring(x+6,y,2,'#88917c66')}}
+ line(0,H*.14,W,H*.14,'#a49d7150',3);line(0,H*.155,W,H*.155,'#080e0d',5);
+ text('VAULT-TEC  /  SUBLEVEL 101',W*.07,H*.075,Math.max(6,D*.018),amber);
+ text('REACTOR ONLINE',W*.93,H*.075,Math.max(6,D*.016),green,'right');
+ // Far door rolls on the same rail, with its own phase and radius.
+ function door(x,radius,label,opacity){
+  const y=floor-radius;ctx.save();ctx.globalAlpha=opacity;ctx.translate(x,y);ctx.rotate(x/radius);
+  ctx.beginPath();for(let i=0;i<96;i++){const a=i/96*Math.PI*2,rr=radius*(i%8<4?1:.9);i?ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr):ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr)}ctx.closePath();ctx.fillStyle='#49564e';ctx.fill();ctx.strokeStyle='#c3b87c';ctx.lineWidth=radius*.035;ctx.stroke();
+  ring(0,0,radius*.8,'#111e1a',radius*.12);ring(0,0,radius*.72,'#879078',radius*.018);
+  for(let i=0;i<12;i++){const a=i*Math.PI/6;line(Math.cos(a)*radius*.82,Math.sin(a)*radius*.82,Math.cos(a)*radius*.94,Math.sin(a)*radius*.94,i%2?amber:'#1b2420',radius*.075);ring(Math.cos(a)*radius*.65,Math.sin(a)*radius*.65,radius*.028,'#bcc0a0',radius*.018)}
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;line(Math.cos(a)*radius*.24,Math.sin(a)*radius*.24,Math.cos(a)*radius*.56,Math.sin(a)*radius*.56,'#26382d',radius*.05)}
+  ring(0,0,radius*.51,'#78806a',radius*.025);text(label,0,0,radius*.37,amber,'center');text('VAULT',0,-radius*.32,radius*.095,'#c8d0af','center');
+  ctx.restore();
+ }
+ door(W*.5-Math.sin(phase)*W*.24,r*.64,'76',.48);
+ door(W*.5+Math.sin(phase)*W*.24,r,'101',1);
+ box(0,floor,W,H-floor,'#111b17');line(0,floor+2,W,floor+2,amber,D*.008);line(0,floor+D*.035,W,floor+D*.035,'#5a684a',D*.01);
+ for(let i=0;i<28;i++){const x=W*i/27;line(x,floor+4,x+D*.015,floor+D*.028,'#8c8146',Math.max(1,D*.012))}
+ // Two wrist-computer housings: rounded shell, glass screen, dial, speaker and straps.
+ function pip(cx,cy,index){
+  const pw=Math.min(W*.43,H*.46),ph=pw*.64,left=cx-pw/2,top=cy-ph/2;
+  box(left+pw*.21,top-ph*.1,pw*.54,ph*1.2,'#242f21');
+  ctx.beginPath();ctx.roundRect(left,top,pw,ph,pw*.07);ctx.fillStyle='#69704b';ctx.fill();ctx.strokeStyle='#a3a77a';ctx.lineWidth=Math.max(1,pw*.008);ctx.stroke();
+  const sx=left+pw*.055,sy=top+ph*.14,sw=pw*.72,sh=ph*.69;
+  ctx.beginPath();ctx.roundRect(sx-3,sy-3,sw+6,sh+6,pw*.04);ctx.fillStyle='#1b2719';ctx.fill();
+  ctx.save();ctx.beginPath();ctx.roundRect(sx,sy,sw,sh,pw*.03);ctx.clip();box(sx,sy,sw,sh,'#061b0c');
+  const light=ctx.createRadialGradient(sx+sw*.45,sy+sh*.4,0,sx+sw*.5,sy+sh*.5,sw*.7);light.addColorStop(0,`rgba(89,180,60,${.12+energy*.2})`);light.addColorStop(1,'#021006');ctx.fillStyle=light;ctx.fillRect(sx,sy,sw,sh);
+  const font=sw*.046,step=sh*.117,shift=Math.floor(Math.max(0,t)*1.5)%falloutCode.length;
+  ctx.shadowColor=green;ctx.shadowBlur=small?0:glow*D*.009;
+  text(index?'PIP-BOY / RADIO':'PIP-BOY / STATUS',sx+sw*.045,sy+sh*.085,font*1.15,green);
+  for(let j=0;j<5;j++){const code=falloutCode[(shift+j+index*4)%falloutCode.length];const reveal=j===4?Math.floor((Math.max(0,t)*1.5%1)*code.length):code.length;text(code.slice(0,reveal),sx+sw*.045,sy+sh*.24+j*step,font,green)}
+  // Spectrum trace remains live while the animation clock is frozen.
+  ctx.beginPath();for(let j=0;j<40;j++){const v=Math.max(0,Math.min(1,b[(j+index*13)%64]*gain));const x=sx+sw*(.04+j*.92/39),y=sy+sh*(.88-v*.11);j?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.strokeStyle=green;ctx.lineWidth=Math.max(1,pw*.004);ctx.stroke();ctx.shadowBlur=0;
+  if(Math.floor(t*2)%2===0)box(sx+sw*.045,sy+sh*.77,font*.6,2,green);
+  for(let y=sy;y<sy+sh;y+=Math.max(2,D*.005))box(sx,y,sw,Math.max(1,D*.0015),'#00100666');
+  const sweep=((t*.1+index*.45)%1)*sh;box(sx,sy+sweep,sw,sh*.025,'#b1ff8317');
+  ctx.restore();
+  const dx=left+pw*.885,dy=top+ph*.38;
+  ring(dx,dy,pw*.065,'#25341f',pw*.025);ring(dx,dy,pw*.047,'#c3c393',pw*.01);line(dx,dy,dx+pw*.034*Math.cos(phase),dy+pw*.034*Math.sin(phase),amber,pw*.008);
+  for(let j=0;j<4;j++)line(left+pw*.83,top+ph*(.61+j*.048),left+pw*.95,top+ph*(.61+j*.048),'#293b24',pw*.012);
+  box(left+pw*.84,top+ph*.12,pw*.07,ph*.045,energy>.3?green:amber);
+  text(index?'RADIO / 2077':'PIP-BOY 3000',left+pw*.08,top+ph*.92,pw*.025,'#d9dbad');
+ }
+ pip(W*.255,H*.65,0);pip(W*.745,H*.65,1);
+ // Sparse dust, bounded even after hours of playback; detail controls its count.
+ for(let i=0;i<(small?8:Math.floor(10+detail*24));i++){const x=((i*.618033+ t*.007)%1)*W,y=((i*.381966+t*.012)%1)*H;box(x,y,1.2,1.2,'#c6cfa338')}
+ ctx.restore();
+}
+// END FALLOUT RENDERER
+
 function renderSpace(canvas,t,b,small){
  const c=canvas.getContext('2d'),W=canvas.width,H=canvas.height,U=Math.min(W,H),C=palettes[palette],energy=Math.min(1,Math.max(0,rms*gain*3)),bank=Math.sin(t*.52)*.11,cx=W*(.5+bank),cy=H*(.45+Math.cos(t*.37)*.055);
  const point=(x,y,z)=>[cx+U*(x*Math.cos(bank)-y*Math.sin(bank))/z,cy+U*(x*Math.sin(bank)+y*Math.cos(bank))/z];
@@ -269,7 +334,7 @@ function renderMario(canvas,t,b){
  marioSprite.forEach((line,row)=>{[...line].forEach((pixel,column)=>{if(colors[pixel])box(heroX+(column-6)*2+(row>12&&jump===0?step*(column<6?-1:1):0),188-jump-32+row*2,2,2,colors[pixel])})});
 }
 
-function render(canvas,kind,t,b,w,small=false){if(kind==='spaceFlight'){renderSpace(canvas,t,b,small);return}if(kind==='superMario'){renderMario(canvas,t,b);return}if(kind==='tron'){renderTron(canvas,t,b,small);return;}if(kind==='yosemite'){renderYosemite(canvas,t,small);return}const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
+function render(canvas,kind,t,b,w,small=false){if(kind==='fallout'){renderFallout(canvas,t,b,small);return}if(kind==='spaceFlight'){renderSpace(canvas,t,b,small);return}if(kind==='superMario'){renderMario(canvas,t,b);return}if(kind==='tron'){renderTron(canvas,t,b,small);return;}if(kind==='yosemite'){renderYosemite(canvas,t,small);return}const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
 if(kind==='ironMan'){
  const cx=W*.5,cy=H*.46,radius=D*.29,red='#ff493b',gold='#ffd080',cyan='#75e8ff',energy=small?.35:Math.min(1,Math.max(0,rms*gain*3));
  const point=(a,r)=>[cx+Math.cos(a)*r,cy+Math.sin(a)*r];

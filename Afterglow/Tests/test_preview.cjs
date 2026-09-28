@@ -18,7 +18,7 @@ function harness(){
 function stream(){const track={stopped:false,stop(){this.stopped=true}};return{track,getTracks:()=>[track],getAudioTracks:()=>[track]}}
 const flush=()=>new Promise(r=>setImmediate(r));
 (async()=>{
- const h=harness();assert.equal(h.cards.length,14);for(const card of h.cards){card.click();assert.equal(h.elements.get('visual-name').textContent,card.name==='Tron'?'Light cycles':card.name)}
+ const h=harness();assert.equal(h.cards.length,15);for(const card of h.cards){card.click();assert.equal(h.elements.get('visual-name').textContent,card.name==='Tron'?'Light cycles':card.name)}
  h.run(`globalThis.marioRects=[];const marioContext=$('visual').getContext('2d');marioContext.fillRect=(...rect)=>marioRects.push(rect)`);
  for(const t of [0,280/38,500/38,640/38,1000000]){
   h.run(`marioRects=[];render($('visual'),'superMario',${t},bands,wave)`);
@@ -46,5 +46,5 @@ const flush=()=>new Promise(r=>setImmediate(r));
  h.run('tick(100)');assert(h.run('rms')>0);await h.elements.get('play').onclick();h.run('tick(200)');assert.equal(h.run('rms'),0);assert.equal(h.elements.get('mode').textContent,'AUDIO IDLE');
  h.elements.get('seek').oninput({target:{value:'.5'}});assert.equal(h.run('audio.currentTime'),10);h.elements.get('restart').click();assert.equal(h.run('audio.currentTime'),0);
  h.elements.get('volume').oninput({target:{value:'.2'}});assert.equal(h.run('audio.volume'),.2);await h.run("selectSource('ambient')");assert(h.elements.get('volume').disabled);
- console.log('PASS: 14 galleries, 5 palettes, settings/immersive close, microphone denial/retry/disconnect, stale permission success/failure, muted analysis graph, local playback/pause/seek/restart/volume.');
+ console.log('PASS: 15 galleries, 5 palettes, settings/immersive close, microphone denial/retry/disconnect, stale permission success/failure, muted analysis graph, local playback/pause/seek/restart/volume.');
 })().catch(e=>{console.error(e);process.exitCode=1});
