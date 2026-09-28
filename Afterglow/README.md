@@ -1,6 +1,6 @@
 # Afterglow
 
-A native music-visualizer studio for **iPhone, iPad, and Mac**, with thirteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
+A native music-visualizer studio for **iPhone, iPad, and Mac**, with fourteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
 This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 24, 2026. The latest native response-toggle and gallery changes still need runtime verification; see the [current validation status](#validation-status) below.
 
@@ -18,7 +18,7 @@ immersive visualizer menu):
 Every mode supports **Light blue**, **Orange**, and **Red**. The Tron color is
 independent of the original five palettes, so switching back restores your previous
 palette. Native settings preserve all existing preferences when upgrading; Tron
-mode/color choices also persist in the browser preview where local storage is available.
+mode/color choices are included in the explicit Save preferences workflow.
 
 The existing sensitivity, motion-speed, glow, detail, favorites, pause, and Reduce
 Motion behavior apply. Measured input changes the glow/line weight and disc size;
@@ -30,6 +30,20 @@ migration, all nine mode/color combinations, disc rebounds, cycle trails, and
 long-running circuit geometry. `AFTERGLOW_TEST_SDK` optionally selects a macOS SDK.
 
 
+## Version 0.3: controls and local preferences
+
+This update fixes source/playback races, unavailable transport actions, input-meter state, and settings-panel controls. It reduces thumbnail redraws and idle audio analysis, and keeps animation continuous when speed changes. See [the control audit](Docs/Control-Audit.md) for coverage and remaining device checks.
+
+Open **Settings → Save preferences locally** to save the current visual, palette, sliders, frame rate, favorites, volume, and motion pause. The saved setup loads at the next launch. Changes are manual-save: **Restore** reloads the saved setup, **Reset** changes the current setup to defaults, and **Forget** removes only saved preferences. Imported music is unaffected. Playback, microphone access, and account credentials are never restored by preferences.
+
+The browser preview also provides **Export JSON / Import JSON**. Use this backup when your browser blocks local storage or when moving the preview file: persistence for `file://` pages varies by browser. Import applies the setup; click Save to retain it locally. The native app uses device-local UserDefaults. Existing native visual settings remain readable for migration.
+
+## iPhone Duo update
+
+Version 0.2 adds an iOS 27.1 adaptive workspace: a compact outer-display layout, an expanded scene and control deck, and system-managed arrangements around the fold. A shared animation clock preserves motion time as the layout changes. The native Mac target and iOS 17+ fallback remain available. The iOS target now requires the **Xcode 27.1 SDK** to compile; Duo hardware and simulator validation are still outstanding. See [Duo implementation and build notes](Docs/iPhone-Duo.md).
+
+Open **Duo-Demo.html** for an interactive device-frame presentation around the actual preview app. Watch **Demo/Afterglow-Duo-Demo.mp4** for a 24-second rendered walkthrough with an original ambient score. Import **Demo/Open-Sky.wav** to try the score in the app. The demo frame and poses are illustrative, not footage of a compiled native app.
+
 ## Try the visuals immediately
 
 From this `Afterglow` directory, start a localhost server:
@@ -40,7 +54,7 @@ python3 -m http.server 8765 --bind 127.0.0.1
 
 Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop it. If the port is occupied, use `8766` in both the command and URL. From the repository root, append `--directory Afterglow` to the command.
 
-Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. The choice persists after reload. The horizontal control below the gallery browses all thirteen styles. Escape leaves immersive mode.
+Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. Use Save preferences locally to retain this choice after reload. The horizontal control below the gallery browses all fourteen styles. Escape leaves immersive mode.
 
 No music account, backend, API key, or package installation is required. Python is only used to serve the preview; opening `Preview.html` directly also supports ambient visuals, but localhost is recommended for browser audio permissions. Audio files and microphone samples are processed locally.
 
@@ -48,7 +62,7 @@ The preview is a browser implementation, not the compiled native app. It does no
 
 ## Run the native app on your M-series Mac
 
-1. Install/open **Xcode 16 or newer** on macOS 14 or newer, then open this checkout.
+1. Install/open **Xcode 27.1 or newer**, and extract this archive.
 2. Open **Afterglow.xcodeproj**. No project generator, package manager, backend, or API secret is required.
 3. Select the **Afterglow-Mac** scheme and **My Mac** as the run destination.
 4. Press **⌘R**. The default Mac configuration uses local signing. If Xcode asks, choose **Sign to Run Locally** in the Mac target’s Signing & Capabilities settings.
@@ -99,7 +113,7 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 
 ## Visual response and gallery browsing
 
-Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. The preference is saved. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all thirteen visualizers.
+Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. Use Save preferences locally to retain the preference. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all fourteen visualizers.
 
 Rendering reuses cached Halo depth orders and browser frequency-bin ranges. The browser skips visual analysis and rendering while hidden or uses ambient animation when independent; native independent mode avoids publishing analyzer frames unless the source meters are visible. These are reductions in repeated work; no device-specific frame-rate improvement has been measured.
 
@@ -107,6 +121,7 @@ Validated September 24: browser regression tests (including playback continuity,
 
 ## Visuals and controls
 
+- **Yosemite:** a cinematic valley overlook with drifting clouds behind the cliffs, moving valley mist, distant birds, and gentle audio-responsive sunlight. See [scene notes](Docs/Yosemite.md).
 - **Aurora:** layered flowing light ribbons.
 - **Spectrum:** 64 logarithmic frequency bars with reflections.
 - **Orbit:** concentric rings and radial frequency spokes.
@@ -119,7 +134,7 @@ Validated September 24: browser regression tests (including playback continuity,
 - **Halo:** a tilted ringworld in a starfield, with illuminated surface panels, orbiting energy pulses, and spectrum-driven spires. Uses the selected palette and existing motion, sensitivity, glow, and detail controls.
 - **Tron:** light cycles, bouncing identity discs, and expanding circuits; each has light blue, orange, and red options.
 
-Choose **Ultraviolet, Glacier, Ember, Candy, or Monochrome**. Sensitivity, motion speed, glow, detail, frame-rate preference, and favorites persist between app launches. 30 fps reduces rendering work. System Reduce Motion pauses continuous time-based motion; measured amplitude may still change the image.
+Choose **Ultraviolet, Glacier, Ember, Candy, or Monochrome**. Use **Save preferences locally** to retain sensitivity, motion speed, glow, detail, frame rate, and favorites between app launches. 30 fps reduces rendering work. System Reduce Motion pauses continuous time-based motion; measured amplitude may still change the image.
 
 The badge distinguishes **LIVE AUDIO**, **AUDIO IDLE**, and **AMBIENT MOTION**. Ambient animation is not presented as audio analysis. Visual motion can be paused independently of playback.
 
@@ -140,11 +155,12 @@ This version is a **foreground visualizer**. On iOS it pauses its own playback a
 | App | Entry point, source/state model, persisted visual settings |
 | Audio | Local player, microphone input, ScreenCaptureKit, analyzer bridge |
 | Core | Portable C FFT and signal processing |
-| Services | MusicKit and sandboxed local collection |
+| Services | MusicKit, sandboxed local collection, local preference snapshots |
 | Views | Responsive SwiftUI studio, sources, player, settings |
-| Visualizers | Thirteen visualizers, including three Tron modes, with Canvas renderers and animation scheduling |
+| Visualizers | Fourteen visualizers and animation scheduling |
 | Config | Info plists, entitlements, build settings, privacy manifest |
-| Tests | Deterministic audio-processing, settings-migration, and Tron geometry tests |
+| Tests | Audio, browser controls/scheduling, renderer, and native preference regression checks |
+| Web | Editable HTML template, CSS, and JavaScript for the offline preview |
 | Scripts | Project regeneration and build checks |
 | Docs | Architecture, validation status, device checklist |
 
@@ -155,6 +171,8 @@ There are no third-party app runtime dependencies. `Scripts/generate-project.py`
 See the [September 24 UI/audio validation report](Docs/UI-Audio-Validation.md) for verified native microphone and local-file playback, control checks, fixes, and remaining permission/account requirements.
 
 ## Validation status
+
+**PR #4 integration, September 28, 2026:** all fourteen visualizers are retained, including Yosemite, Super Mario, and Space Flight. Audio response is part of the explicit Save/Restore/Reset/Forget preference snapshot; existing saved settings default to enabled. Classic and Duo layouts share the response setting. The current browser suites, DSP tests, native settings/clock tests, and unsigned Mac build pass locally. Hosted Xcode 27.1 validation is required for the integrated iOS target. Historical results below apply to their stated revisions.
 
 Latest checks completed on September 24, 2026:
 
@@ -169,6 +187,19 @@ Latest checks completed on September 24, 2026:
 | Native runtime | Earlier locally signed Mac build launched; microphone and local WAV playback were exercised. Latest toggle/scroll changes have not been retested in the native app. |
 
 Compilation and simulated browser regression tests do not establish device or account behavior. Browser microphone capture, Mac system-audio capture, configured MusicKit playback, physical-device checks, and sustained performance remain open. See the [UI/audio report](Docs/UI-Audio-Validation.md) and [device checklist](Docs/Device-Checklist.md).
+
+## Automated checks
+
+GitHub Actions runs browser/DSP regressions and unsigned native Mac/iOS builds for pull requests. The Apple job selects Xcode 27.1 on the `xcode-27` hosted image, runs native preferences and Tron geometry tests, and then builds both app targets. A green build does not establish hardware audio, account authorization, or interactive layout behavior.
+
+To repeat the portable checks with the same locked development dependencies:
+
+```bash
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
+```
+
+Use Node 24 or later, Python 3, and a C compiler. Dependencies are development-only; the shipped app and offline preview do not load npm packages. `npm test` runs all portable checks and stops on the first failure. CI also rebuilds the previews and rejects stale generated HTML.
 
 ## Verification commands
 
@@ -198,14 +229,27 @@ Native compilation on a Mac with Xcode selected as the developer directory:
 bash Scripts/build-apple.sh
 ```
 
-If the active developer directory points to Command Line Tools, select Xcode for
-this command (adjust the path if Xcode is installed elsewhere):
+The build script runs isolated native preference/clock regression checks and compiles both the native Mac app and the iOS simulator app without signing. It does not validate account access or install a signed app. Follow `Docs/Device-Checklist.md` before treating the app as production-ready or submitting it to TestFlight/App Store.
+
+## Performance refactor
+
+The September 25 update reduces portable audio-analysis CPU time by **25–29%** in the included Linux benchmark, removes shared-model audio-frame updates, avoids redundant thumbnail redraws, and batches constellation halos. The browser preview also limits unnecessary animation work. These are measured analyzer improvements and structural rendering changes; actual iPhone/M-series Mac FPS and power savings still need device profiling. See [the performance report](Docs/Performance.md) for results, tradeoffs, and reproduction steps.
 
 ```bash
-DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer bash Scripts/build-apple.sh
+bash Scripts/benchmark-dsp.sh
+node Tests/test-preview.cjs
 ```
 
-The build script compiles both the native Mac app and the iOS simulator app without signing. It does not validate account access or install a signed app. Follow `Docs/Device-Checklist.md` before treating the app as production-ready or submitting it to TestFlight/App Store.
+Rebuild the standalone previews after editing `Web/`:
+
+```bash
+python3 Scripts/build-preview.py
+python3 Scripts/build-duo-demo.py
+node Tests/test-preview.cjs
+node Tests/test-duo-demo.cjs
+```
+
+`Tests/test-controls.cjs` requires development-only `jsdom`; `Tests/test-yosemite-rendering.cjs` requires development-only `@napi-rs/canvas`. Neither dependency ships in the app or is required to open the offline preview. See `Docs/Control-Audit.md` for test scope.
 
 ## Primary references
 

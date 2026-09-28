@@ -23,7 +23,6 @@ struct TronTests {
                 precondition(restored == settings, "Tron selection must round-trip without losing preferences")
             }
         }
-        precondition(VisualizerStyle.allCases.count == 13)
         var space = old
         space.style = .spaceFlight
         space.favorites.append(.spaceFlight)
@@ -34,6 +33,14 @@ struct TronTests {
         mario.favorites.append(.superMario)
         let savedMario = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(mario))
         precondition(savedMario == mario)
+        let expectedStyles: Set<VisualizerStyle> = [.yosemite, .aurora, .spectrum, .orbit,
+            .waveform, .tunnel, .constellation, .terrain, .bloom, .tron, .halo, .ironMan, .superMario, .spaceFlight]
+        precondition(Set(VisualizerStyle.allCases) == expectedStyles)
+        var yosemite = old
+        yosemite.style = .yosemite
+        yosemite.favorites.append(.yosemite)
+        let yosemiteRestored = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(yosemite))
+        precondition(yosemiteRestored == yosemite, "Yosemite must retain earlier settings and favorites")
         var halo = old
         halo.style = .halo
         halo.favorites.append(.halo)

@@ -12,11 +12,13 @@ final class AppleMusicService: ObservableObject {
     @Published var error: String?
     private lazy var player = ApplicationMusicPlayer.shared
     private var requestGeneration = UUID()
+    private var sessionGeneration = UUID()
     private var libraryOffset = 0
     @Published private(set) var hasMoreLibrary = true
 
     let configured = (Bundle.main.object(forInfoDictionaryKey: "AfterglowMusicKitEnabled") as? String) == "YES"
     var isPlaying: Bool { configured && authorized && player.state.playbackStatus == .playing }
+    var hasCurrentEntry: Bool { configured && authorized && player.queue.currentEntry != nil }
     var title: String { configured ? (authorized ? player.queue.currentEntry?.title ?? "Choose a song" : "Connect Apple Music") : "Apple Music setup" }
     var artist: String { configured && authorized ? player.queue.currentEntry?.subtitle ?? "Apple Music" : "Open music sources to connect" }
     var position: Double { configured && authorized ? player.playbackTime : 0 }
@@ -34,13 +36,18 @@ final class AppleMusicService: ObservableObject {
         }
         guard !busy else { return }
         busy = true; defer { busy = false }
-        authorized = await MusicAuthorization.request() == .authorized
+        let session = sessionGeneration
+        let status = await MusicAuthorization.request()
+        guard session == sessionGeneration, !Task.isCancelled else { return }
+        authorized = status == .authorized
         guard authorized else {
             error = "Allow Afterglow access to Media & Apple Music in Settings, then reconnect."
             return
         }
         do {
-            canPlayCatalog = try await MusicSubscription.current.canPlayCatalogContent
+            let eligibility = try await MusicSubscription.current.canPlayCatalogContent
+            guard session == sessionGeneration, authorized else { return }
+            canPlayCatalog = eligibility
             try await fetchLibrary(reset: true)
         } catch { self.error = error.localizedDescription }
     }
@@ -66,10 +73,12 @@ final class AppleMusicService: ObservableObject {
         do { try await fetchLibrary(reset: false) } catch { self.error = error.localizedDescription }
     }
     private func fetchLibrary(reset: Bool) async throws {
+        let session = sessionGeneration
         if reset { libraryOffset = 0; library = [] }
         var request = MusicLibraryRequest<Song>()
         request.limit = 100; request.offset = libraryOffset
         let response = try await request.response()
+        guard session == sessionGeneration, authorized, !Task.isCancelled else { return }
         let page = Array(response.items)
         library.append(contentsOf: page)
         libraryOffset += page.count
@@ -101,6 +110,7 @@ final class AppleMusicService: ObservableObject {
     func pause() { if configured { player.pause() } }
     func seek(to value: Double) { if configured { player.playbackTime = max(0, min(value, duration)) } }
     func clearSession() {
+        sessionGeneration = UUID(); canPlayCatalog = false; hasMoreLibrary = true; error = nil
         pause(); results = []; library = []; authorized = false
         if configured { player.queue = ApplicationMusicPlayer.Queue(for: [Song]()) }
         requestGeneration = UUID(); libraryOffset = 0

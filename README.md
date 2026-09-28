@@ -1,6 +1,6 @@
 # Afterglow — Music Visualizer
 
-A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from thirteen visualizers, including Tron, Halo, and Iron Man.
+A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from fourteen visualizers, including Tron, Halo, and Iron Man.
 
 ## Run locally
 
@@ -14,13 +14,17 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory Afterglow
 
 Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop the server. If port 8765 is already in use, try 8766 and use that port in the URL.
 
-Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all thirteen visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
+Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all fourteen visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
+
+## Yosemite, Duo, and local preferences
+
+Yosemite scenery, adaptive Duo layouts, and explicit local preference Save/Restore/Reset/Forget are included alongside Super Mario and Space Flight. Open `Afterglow/Duo-Demo.html` for the interactive demo.
 
 The preview runs locally without an account, backend, or API key. Audio is not uploaded. It does not provide native MusicKit playback or Mac system-audio capture.
 
 ### Native Mac app
 
-Requires a Mac with **Xcode 16 or newer** and **macOS 14 or newer**.
+Requires a Mac with **Xcode 27.1 or newer** and **macOS 14 or newer**.
 
 ```bash
 open Afterglow/Afterglow.xcodeproj
@@ -40,11 +44,13 @@ See the [full setup guide](Afterglow/README.md) for signing, music-source capabi
 - **Halo:** a glowing ringworld, stars, orbiting energy, and audio-responsive spires.
 - **Iron Man:** a white-blue arc reactor, rotating red/gold rings, and reactive HUD accents.
 - **React to audio:** saved preference for measured audio response or independent animation. Streaming companions use independent animation because they do not supply audio samples.
-- **Gallery scrolling:** visible horizontal control for all thirteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
+- **Gallery scrolling:** visible horizontal control for all fourteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
 
 The renderers reuse Halo depth orders and browser frequency ranges, skip hidden browser rendering/analysis, and reduce native frame publication during independent animation. No device-specific speedup has been benchmarked.
 
 ## Validation
+
+**PR #4 integration, September 28, 2026:** all fourteen visualizers are retained, including Yosemite, Super Mario, and Space Flight. Audio response is part of the explicit Save/Restore/Reset/Forget preference snapshot; existing saved settings default to enabled. Classic and Duo layouts share the response setting. The current browser suites, DSP tests, native settings/clock tests, and unsigned Mac build pass locally. Hosted Xcode 27.1 validation is required for the integrated iOS target. Historical results below apply to their stated revisions.
 
 On September 24, 2026, DSP tests, settings/geometry tests, browser logic regression tests, and unsigned macOS/iOS Simulator builds passed. Browser interaction checks verified response-toggle persistence and gallery scrolling. Earlier in the same session, the locally signed Mac app launched and microphone/local-file playback were exercised.
 

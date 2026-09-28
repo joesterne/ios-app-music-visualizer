@@ -46,6 +46,9 @@ struct SourceSheet: View {
             }
         }
         .tint(model.settings.palette.accent).preferredColorScheme(.dark)
+        .alert("Afterglow", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
+            Button("OK") { model.error = nil }
+        } message: { Text(model.error ?? "") }
         #if os(macOS)
         .frame(minWidth: 600, idealWidth: 700, minHeight: 650)
         #endif
@@ -77,7 +80,7 @@ struct SourceSheet: View {
                             Menu {
                                 Button("Remove imported copy", role: .destructive) { model.removeTrack(track) }
                             } label: { Image(systemName: "ellipsis").frame(width: 32, height: 40) }
-                            .menuStyle(.borderlessButton).fixedSize()
+                            .menuStyle(.borderlessButton).fixedSize().disabled(model.busy || model.importing)
                         }.padding(.vertical, 12)
                         Divider()
                     }
@@ -111,14 +114,14 @@ struct SourceSheet: View {
                 Text("Afterglow listens to the selected system input. There is no audio monitoring, recording, or upload. On iPhone, this hears music in your room; it cannot read another app’s digital audio or music in headphones.")
                     .font(.system(size: 13)).foregroundStyle(StudioTheme.muted)
                 captureButton
-                LevelMeter(level: Double(model.frame.rms) * 4)
+                LiveLevelMeter(analyzer: model.analyzer, playing: model.isPlaying)
             }
         case .systemAudio:
             VStack(alignment: .leading, spacing: 15) {
                 Text("Allow Screen & System Audio Recording when macOS asks. Play audio in another app, then return here. Protected content may provide silence. Afterglow excludes its own playback and discards screen frames; it saves no capture.")
                     .font(.system(size: 13)).foregroundStyle(StudioTheme.muted)
                 captureButton
-                LevelMeter(level: Double(model.frame.rms) * 4)
+                LiveLevelMeter(analyzer: model.analyzer, playing: model.isPlaying)
             }
         case .ambient:
             VStack(alignment: .leading, spacing: 15) {
@@ -171,6 +174,7 @@ private struct AppleMusicPanel: View {
                     Text(query.isEmpty ? "YOUR LIBRARY" : "CATALOG • TOP 25").font(.system(size: 9, design: .monospaced)).tracking(1.5)
                     Spacer()
                     Button("Disconnect") { service.clearSession() }.font(.system(size: 11))
+                        .disabled(model.busy || service.busy)
                 }
                 if service.busy { ProgressView() }
                 if songs.isEmpty && !service.busy {
@@ -220,5 +224,16 @@ struct LevelMeter: View {
                     .frame(height: 18)
             }
         }.accessibilityLabel("Audio level \(Int(min(1, max(0, level)) * 100)) percent")
+    }
+}
+
+private struct LiveLevelMeter: View {
+    let analyzer: AudioAnalyzer
+    let playing: Bool
+    @Environment(\.scenePhase) private var scenePhase
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 15, paused: !playing || scenePhase != .active)) { _ in
+            LevelMeter(level: playing ? Double(analyzer.snapshot().rms) * 4 : 0)
+        }
     }
 }

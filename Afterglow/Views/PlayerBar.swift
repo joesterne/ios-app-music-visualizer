@@ -55,7 +55,7 @@ struct PlayerBar: View {
             if hasTransport {
                 Button { Task { await model.skip(forward: false) } } label: {
                     Image(systemName: "backward.end.fill").font(.system(size: 13)).frame(width: 30, height: 40)
-                }.buttonStyle(.plain).accessibilityLabel("Previous track")
+                }.buttonStyle(.plain).accessibilityLabel("Previous track").disabled(model.busy || !model.hasPlayableQueue)
             }
             Button { Task { await model.togglePlayback() } } label: {
                 Image(systemName: playing ? "pause.fill" : "play.fill").font(.system(size: 15, weight: .semibold))
@@ -66,7 +66,7 @@ struct PlayerBar: View {
             if hasTransport {
                 Button { Task { await model.skip(forward: true) } } label: {
                     Image(systemName: "forward.end.fill").font(.system(size: 13)).frame(width: 30, height: 40)
-                }.buttonStyle(.plain).accessibilityLabel("Next track")
+                }.buttonStyle(.plain).accessibilityLabel("Next track").disabled(model.busy || !model.hasPlayableQueue)
             }
         }
     }
