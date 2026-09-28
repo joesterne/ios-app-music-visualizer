@@ -131,7 +131,7 @@ enum VisualRenderer {
         let phase = (max(0, t) * 0.16).truncatingRemainder(dividingBy: .pi * 2)
         let energy = min(1, max(0, Double(f.rms) * gain * 3))
         let green = Color(hex: 0x9CF776), amber = Color(hex: 0xE2BD69)
-        let floor = h * 0.65, radius = min(w * 0.24, h * 0.285)
+        let floor = h * 0.56, radius = min(w * 0.24, h * 0.23)
         func box(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ width: Double, _ height: Double, _ color: Color) {
             g.fill(Path(CGRect(x: x, y: y, width: width, height: height)), with: .color(color))
         }
@@ -188,7 +188,7 @@ enum VisualRenderer {
         line(&c,0,floor+unit*0.035,w,floor+unit*0.035,Color(hex:0x5A684A),unit*0.01)
         for i in 0..<28 { let x = w*Double(i)/27;line(&c,x,floor+4,x+unit*0.015,floor+unit*0.028,Color(hex:0x8C8146),max(1,unit*0.012)) }
         func pip(_ cx: Double, _ cy: Double, _ index: Int) {
-            let pw = min(w*0.43,h*0.58), ph = pw*0.64, left = cx-pw/2, top = cy-ph/2
+            let pw = min(w*0.43,h*0.46), ph = pw*0.64, left = cx-pw/2, top = cy-ph/2
             box(&c,left+pw*0.21,top-ph*0.1,pw*0.54,ph*1.2,Color(hex:0x242F21))
             let shell = Path(roundedRect:CGRect(x:left,y:top,width:pw,height:ph),cornerRadius:pw*0.07)
             c.fill(shell,with:.color(Color(hex:0x69704B)));c.stroke(shell,with:.color(Color(hex:0xA3A77A)),lineWidth:max(1,pw*0.008))
@@ -225,7 +225,7 @@ enum VisualRenderer {
             box(&c,left+pw*0.84,top+ph*0.12,pw*0.07,ph*0.045,energy>0.3 ? green : amber)
             label(&c,index == 0 ? "PIP-BOY 3000" : "RADIO / 2077",left+pw*0.08,top+ph*0.92,pw*0.025,Color(hex:0xD9DBAD))
         }
-        pip(w*0.255,h*0.805,0);pip(w*0.745,h*0.805,1)
+        pip(w*0.255,h*0.65,0);pip(w*0.745,h*0.65,1)
         for i in 0..<Int(10+detail*24) {
             let x = (Double(i)*0.618033+t*0.007).truncatingRemainder(dividingBy:1)*w
             let y = (Double(i)*0.381966+t*0.012).truncatingRemainder(dividingBy:1)*h

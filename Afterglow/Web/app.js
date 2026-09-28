@@ -141,7 +141,7 @@ function renderFallout(canvas,t,b,small=false){
  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,D=Math.min(W,H);
  if(W<2||H<2)return;
  const phase=((Math.max(0,t)*.16)%(Math.PI*2)),energy=small?.22:Math.min(1,Math.max(0,rms*gain*3));
- const green='#9cf776',amber='#e2bd69',floor=H*.65,r=Math.min(W*.24,H*.285);
+ const green='#9cf776',amber='#e2bd69',floor=H*.56,r=Math.min(W*.24,H*.23);
  ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;
  const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x,y,w,h)};
  const line=(x,y,x2,y2,color,width=1)=>{ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x2,y2);ctx.strokeStyle=color;ctx.lineWidth=width;ctx.stroke()};
@@ -169,7 +169,7 @@ function renderFallout(canvas,t,b,small=false){
  for(let i=0;i<28;i++){const x=W*i/27;line(x,floor+4,x+D*.015,floor+D*.028,'#8c8146',Math.max(1,D*.012))}
  // Two wrist-computer housings: rounded shell, glass screen, dial, speaker and straps.
  function pip(cx,cy,index){
-  const pw=Math.min(W*.43,H*.58),ph=pw*.64,left=cx-pw/2,top=cy-ph/2;
+  const pw=Math.min(W*.43,H*.46),ph=pw*.64,left=cx-pw/2,top=cy-ph/2;
   box(left+pw*.21,top-ph*.1,pw*.54,ph*1.2,'#242f21');
   ctx.beginPath();ctx.roundRect(left,top,pw,ph,pw*.07);ctx.fillStyle='#69704b';ctx.fill();ctx.strokeStyle='#a3a77a';ctx.lineWidth=Math.max(1,pw*.008);ctx.stroke();
   const sx=left+pw*.055,sy=top+ph*.14,sw=pw*.72,sh=ph*.69;
@@ -192,7 +192,7 @@ function renderFallout(canvas,t,b,small=false){
   box(left+pw*.84,top+ph*.12,pw*.07,ph*.045,energy>.3?green:amber);
   text(index?'RADIO / 2077':'PIP-BOY 3000',left+pw*.08,top+ph*.92,pw*.025,'#d9dbad');
  }
- pip(W*.255,H*.805,0);pip(W*.745,H*.805,1);
+ pip(W*.255,H*.65,0);pip(W*.745,H*.65,1);
  // Sparse dust, bounded even after hours of playback; detail controls its count.
  for(let i=0;i<(small?8:Math.floor(10+detail*24));i++){const x=((i*.618033+ t*.007)%1)*W,y=((i*.381966+t*.012)%1)*H;box(x,y,1.2,1.2,'#c6cfa338')}
  ctx.restore();

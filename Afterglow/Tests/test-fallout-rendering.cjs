@@ -26,5 +26,5 @@ const translate=ctx.translate.bind(ctx),rotate=ctx.rotate.bind(ctx);
 ctx.translate=(x,y)=>{translations.push([x,y]);translate(x,y)};ctx.rotate=a=>{rotations.push(a);rotate(a)};
 draw(canvas,0);draw(canvas,10);
 assert.equal(translations.length,4);assert.notEqual(translations[0][0],translations[2][0]);assert.notEqual(translations[1][0],translations[3][0]);
-assert(Math.abs(rotations[3]-rotations[1]-(translations[3][0]-translations[1][0])/Math.min(800*.24,500*.285))<1e-9);
+assert(Math.abs(rotations[3]-rotations[1]-(translations[3][0]-translations[1][0])/Math.min(800*.24,500*.23))<1e-9);
 console.log('PASS: Fallout rolling-door geometry, deterministic pause, live CRT response, desktop/portrait/thumbnail rendering and long-running timestamps.');
