@@ -1,0 +1,12 @@
+{
+  "name": "afterglow-validation",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Development-only dependencies for Afterglow regression checks",
+  "engines": { "node": ">=24" },
+  "scripts": { "test": "bash Scripts/test-portable.sh" },
+  "devDependencies": {
+    "@napi-rs/canvas": "0.1.100",
+    "jsdom": "30.1.1"
+  }
+}

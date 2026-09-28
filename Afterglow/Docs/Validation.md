@@ -1,5 +1,10 @@
 # Validation record
 
+## CI follow-up — September 27
+
+Added pull-request checks for the full portable suite and unsigned native builds, using a locked npm development environment and Xcode 27.1 on GitHub’s hosted `xcode-27` image. Fixed an inherited native regression assertion that still expected eleven visuals after Yosemite expanded the gallery to twelve; the test now verifies the exact styles and Yosemite preference migration. Consult the PR check results for actual hosted execution status. This entry records configuration, not an assertion that native builds have passed.
+
+
 ## Current repository integration — September 26
 
 Integrated the version 0.3 package into `main`, preserving Tron, Halo, and Iron Man. The gallery now contains twelve visuals. 95 DOM assertions pass, including Tron mode/color save and reload; scheduler, Duo wrapper, and C DSP checks pass. Swift parsing and Xcode source membership are checked separately. Native builds, native preference/Tron executables, and hardware tests were not run in this Linux workspace. Earlier native build results below apply only to their recorded revisions. PR #4 remains separate.

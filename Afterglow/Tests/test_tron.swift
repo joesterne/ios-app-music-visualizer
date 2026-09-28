@@ -18,7 +18,14 @@ struct TronTests {
                 precondition(restored == settings, "Tron selection must round-trip without losing preferences")
             }
         }
-        precondition(VisualizerStyle.allCases.count == 11)
+        let expectedStyles: Set<VisualizerStyle> = [.yosemite, .aurora, .spectrum, .orbit,
+            .waveform, .tunnel, .constellation, .terrain, .bloom, .tron, .halo, .ironMan]
+        precondition(Set(VisualizerStyle.allCases) == expectedStyles)
+        var yosemite = old
+        yosemite.style = .yosemite
+        yosemite.favorites.append(.yosemite)
+        let yosemiteRestored = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(yosemite))
+        precondition(yosemiteRestored == yosemite, "Yosemite must retain earlier settings and favorites")
         var halo = old
         halo.style = .halo
         halo.favorites.append(.halo)

@@ -172,6 +172,19 @@ Simulator execution, physical-device testing, and runtime checks for MusicKit
 authorization/playback, microphone input, and Mac system-audio capture remain
 outstanding. Follow the [device checklist](Docs/Device-Checklist.md) before distribution.
 
+## Automated checks
+
+GitHub Actions runs browser/DSP regressions and unsigned native Mac/iOS builds for pull requests. The Apple job selects Xcode 27.1 on the `xcode-27` hosted image, runs native preferences and Tron geometry tests, and then builds both app targets. A green build does not establish hardware audio, account authorization, or interactive layout behavior.
+
+To repeat the portable checks with the same locked development dependencies:
+
+```bash
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
+```
+
+Use Node 24 or later, Python 3, and a C compiler. Dependencies are development-only; the shipped app and offline preview do not load npm packages. `npm test` runs all portable checks and stops on the first failure. CI also rebuilds the previews and rejects stale generated HTML.
+
 ## Verification commands
 
 Run these commands from the `Afterglow` directory.

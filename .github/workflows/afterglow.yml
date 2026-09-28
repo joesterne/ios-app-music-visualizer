@@ -1,0 +1,56 @@
+name: Afterglow checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: afterglow-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portable:
+    name: Browser and DSP regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: Afterglow
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: Afterglow/package-lock.json
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: npm test
+      - name: Check generated previews are current
+        run: |
+          python3 Scripts/build-preview.py
+          python3 Scripts/build-duo-demo.py
+          git diff --exit-code -- Preview.html Duo-Demo.html
+
+  apple:
+    name: Native Mac and iOS builds
+    runs-on: xcode-27
+    timeout-minutes: 25
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.1.app/Contents/Developer
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Show selected SDKs
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+      - name: Native regressions and unsigned builds
+        run: bash Afterglow/Scripts/build-apple.sh

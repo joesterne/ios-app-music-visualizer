@@ -18,7 +18,7 @@ September 26, 2026. Browser DOM checks passed; native runtime checks remain pend
 
 ## Reproduce
 
-Run from the app root. Install `jsdom` and `@napi-rs/canvas` into a development tools directory and include its `node_modules` in `NODE_PATH` for the two dependency-bearing tests. The app itself has no third-party runtime dependencies.
+Run from the app root with Node 24 or later. Use `npm ci --ignore-scripts --no-audit --no-fund`, then `npm test` for the full portable suite. The lockfile pins the development-only jsdom and Canvas dependencies. The app itself has no third-party runtime dependencies. Individual checks:
 
 ```bash
 python3 Scripts/build-preview.py

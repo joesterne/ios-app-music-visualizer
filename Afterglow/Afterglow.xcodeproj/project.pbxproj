@@ -395,6 +395,12 @@
 			"path" = "test-dsp.sh";
 			"sourceTree" = "<group>";
 		};
+		"C1E3B3B89A2757D6B6013782" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text.script.sh";
+			"path" = "test-portable.sh";
+			"sourceTree" = "<group>";
+		};
 		"F0ACBBC806A9760A9E573BA4" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "text.script.sh";
@@ -413,6 +419,7 @@
 				"EBEB250C3CDC097872239AF4",
 				"A4DF79B61BA8CC332534945D",
 				"09CB94EE04721F25DFFC8D41",
+				"C1E3B3B89A2757D6B6013782",
 				"F0ACBBC806A9760A9E573BA4",
 			);
 			"path" = "Scripts";
