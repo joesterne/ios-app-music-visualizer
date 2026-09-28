@@ -60,7 +60,18 @@ struct InspectorView: View {
             if reduceMotion { Text("System Reduce Motion is on. Continuous movement is paused.").font(.system(size: 11)).foregroundStyle(StudioTheme.muted) }
             Divider()
             Text(model.modeDescription).font(.system(size: 11)).foregroundStyle(StudioTheme.muted)
-            Button("Reset visual settings") { model.settings = .init() }.font(.system(size: 11)).buttonStyle(.bordered)
+            VStack(alignment: .leading, spacing: 12) {
+                sectionLabel("LOCAL PREFERENCES")
+                Button("Save preferences locally") { model.savePreferences() }.buttonStyle(.borderedProminent)
+                Button("Restore saved preferences") { model.restorePreferences() }
+                    .buttonStyle(.bordered).disabled(!model.hasSavedPreferences)
+                Button("Reset to defaults") { model.resetPreferences() }.buttonStyle(.bordered)
+                Button("Forget saved preferences", role: .destructive) { model.forgetPreferences() }
+                    .disabled(!model.hasSavedPreferences)
+                Text(model.preferenceStatus).font(.footnote).foregroundStyle(StudioTheme.muted)
+                Text("Saves your visual, palette, favorites, sliders, frame rate, volume, and motion pause on this device. Press Save again to keep later changes. Audio files and accounts are not part of this preset.")
+                    .font(.caption).foregroundStyle(StudioTheme.muted)
+            }
             Text("Audio stays on your device. Afterglow has no analytics, ads, or account server.")
                 .font(.system(size: 10)).foregroundStyle(StudioTheme.muted)
         }

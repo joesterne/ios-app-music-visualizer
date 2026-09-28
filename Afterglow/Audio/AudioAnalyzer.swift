@@ -11,23 +11,25 @@ struct AudioFrame: Sendable {
     var treble: Float = 0
     static let silent = AudioFrame()
 
-    static func ambient(at time: Double) -> AudioFrame {
+    static func ambient(at time: Double, includeWaveform: Bool = true) -> AudioFrame {
         var frame = AudioFrame()
         for i in frame.bands.indices {
             let x = Double(i) / 64
             frame.bands[i] = Float(0.16 + 0.42 * pow((sin(x * 9 + time * 0.9) + 1) / 2, 2)
                                   + 0.12 * sin(x * 23 - time * 1.3))
         }
-        for i in frame.waveform.indices {
-            let x = Double(i) / 256
-            frame.waveform[i] = Float(sin(x * .pi * 6 + time) * 0.32 + sin(x * .pi * 14 - time * 0.7) * 0.12)
+        if includeWaveform {
+            for i in frame.waveform.indices {
+                let x = Double(i) / 256
+                frame.waveform[i] = Float(sin(x * .pi * 6 + time) * 0.32 + sin(x * .pi * 14 - time * 0.7) * 0.12)
+            }
         }
         frame.rms = 0.12; frame.bass = 0.36; frame.mid = 0.28; frame.treble = 0.22
         return frame
     }
 }
 
-/// All C state is protected by its internal mutex. This object may cross the audio callback boundary.
+/// C input and display snapshots use separate internal locks. This object may cross the audio callback boundary.
 final class AudioAnalyzer: @unchecked Sendable {
     private let handle: OpaquePointer
     init() {

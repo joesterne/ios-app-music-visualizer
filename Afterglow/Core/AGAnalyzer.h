@@ -14,7 +14,10 @@ void AGAnalyzerPushPlanar(AGAnalyzer *analyzer, const float *left, const float *
                           size_t frames, double sampleRate);
 void AGAnalyzerPushInterleaved(AGAnalyzer *analyzer, const float *samples,
                                size_t frames, unsigned channels, double sampleRate);
-/* levels: linear RMS, peak, bass, mid, treble. All outputs are finite, 0...1. */
+/* Copies the latest complete display frame without waiting for FFT computation.
+   A contended display copy can defer publication until a later hop.
+   levels: linear RMS, peak, bass, mid, treble. Bands/levels: 0...1; waveform: -1...1.
+   All outputs are finite. Stop all callers before destroying the analyzer. */
 void AGAnalyzerCopyFrame(AGAnalyzer *analyzer, float *bands, float *waveform, float *levels);
 #ifdef __cplusplus
 }

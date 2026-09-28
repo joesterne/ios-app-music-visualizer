@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Afterglow — Interactive Preview</title>
+<style>/*__STUDIO_CSS__*/</style>
+</head>
+<body>
+<header><span class="mark" aria-hidden="true">≋</span><span class="logo">afterglow</span><span class="micro">A SPACE FOR SOUND</span><span class="tag">INTERACTIVE PREVIEW</span><button id="settings-button" aria-label="Visual settings">☷</button></header>
+<div class="shell">
+<nav aria-label="Music sources"><div class="micro">SOUND SOURCES</div>
+<button class="source selected" data-source="ambient"><span>✧</span>Ambient studio</button>
+<button class="source" data-source="local"><span>▱</span>Your audio files</button>
+<button class="source" data-source="apple"><span>♪</span>Apple Music</button>
+<button class="source" data-source="spotify"><span>↗</span>Spotify companion</button>
+<button class="source" data-source="mic"><span>♩</span>Microphone / input</button>
+<button class="source" data-source="system"><span>▣</span>Mac system audio</button>
+<button class="source" data-source="other"><span>⊞</span>Other music apps</button>
+<div class="navbottom"><span style="color:var(--accent);font-size:22px">♬</span><p>Less noise.<br>More feeling.</p><small>Your music. Your atmosphere.</small></div>
+</nav>
+<main><div class="heading"><div><div class="micro">YOUR LISTENING ROOM</div><h1>Find your frequency.</h1></div><button class="circle" id="import" aria-label="Import audio">+</button></div>
+<div class="mobile-sources"><button data-source="ambient" class="selected">Ambient</button><button data-source="local">Import audio</button><button data-source="spotify">Spotify ↗</button><button data-source="apple">Apple Music ↗</button><button data-source="mic">Microphone</button></div>
+<section class="stage" aria-label="Visualizer"><canvas id="visual" aria-label="Animated music visualizer"></canvas><div class="stage-top"><span id="mode" class="badge">AMBIENT MOTION</span><button id="favorite" aria-label="Toggle favorite visualizer" style="font-size:23px;color:var(--accent)">♡</button></div><div class="stage-bottom"><div><h2 id="visual-name">Yosemite</h2><p id="visual-subtitle">Clouds over the valley</p></div><button id="expand" aria-label="Toggle immersive mode">⤢</button></div></section>
+<section class="control-deck" aria-label="Visualizer control deck"><h2 class="deck-title">Find your atmosphere.</h2><section id="tron-controls" class="tron-controls" aria-label="Tron options" hidden><span class="micro">TRON / ENTER THE GRID</span><select id="tron-mode" aria-label="Tron animation"><option value="lightCycles">Light cycles</option><option value="identityDiscs">Identity discs</option><option value="circuitExpansion">Circuit expansion</option></select><div class="tron-colors" aria-label="Tron colors"><button data-tron-color="Light blue" aria-pressed="true"><i style="background:#66deff"></i>Light blue</button><button data-tron-color="Orange" aria-pressed="false"><i style="background:#ff8c30"></i>Orange</button><button data-tron-color="Red" aria-pressed="false"><i style="background:#ff3347"></i>Red</button></div></section>
+<div class="gallery-head"><span class="micro">VISUALIZERS</span><span class="micro" id="visual-count">09 / CHOOSE YOUR MOOD</span></div><div class="cards" id="gallery"></div>
+<div class="duo-controls">
+<div class="duo-palette" id="duo-palettes" aria-label="Quick palettes"></div>
+<label class="control"><div><span>Motion</span><output id="duo-speed-value">0.7×</output></div><input id="duo-speed" type="range" min="0.1" max="2" step="0.05" value="0.65"></label>
+<label class="control"><div><span>Glow</span><output id="duo-glow-value">60%</output></div><input id="duo-glow" type="range" min="0" max="1" step="0.05" value="0.6"></label>
+<div class="duo-sources"><button data-source="local">Import music +</button><button data-source="spotify">Spotify ↗</button><button data-source="apple">Apple Music ↗</button></div>
+</div><p class="note" id="source-note">Browser preview · Import a track for real audio response. Apple Music playback and Mac system capture are features of the native Xcode project. Streaming companions use independent ambient motion.</p></section>
+</main>
+<aside class="inspector" aria-label="Visual settings"><div class="micro">ATMOSPHERE</div><h2>Make it yours.</h2><div class="micro" id="palette-heading">COLOR PALETTE</div><p id="tron-palette-note" hidden>Choose a Tron color below the scene.</p><div class="palettes" id="palettes"></div><div class="divider"></div>
+<label class="control"><div><span>Sensitivity</span><output id="gain-value">1.3×</output></div><input type="range" id="gain" min="0.2" max="3" step="0.05" value="1.25"></label>
+<label class="control"><div><span>Motion speed</span><output id="speed-value">0.7×</output></div><input type="range" id="speed" min="0.1" max="2" step="0.05" value="0.65"></label>
+<label class="control"><div><span>Glow</span><output id="glow-value">60%</output></div><input type="range" id="glow" min="0" max="1" step="0.05" value="0.6"></label>
+<label class="control"><div><span>Detail</span><output id="detail-value">65%</output></div><input type="range" id="detail" min="0.2" max="1" step="0.05" value="0.65"></label>
+<label class="control"><div><span>Frame rate</span></div><select id="fps"><option value="30">30 fps · less power</option><option value="60" selected>60 fps</option></select></label>
+<div class="divider"></div><button class="pause" id="pause-motion">Pause visual motion</button><p class="note">Everything is processed on your device. No files or microphone audio are uploaded.</p><div class="divider"></div><section class="preferences" aria-label="Local preferences"><div class="micro">LOCAL PREFERENCES</div>
+<button class="pause" id="save-preferences">Save preferences locally</button>
+<button class="pause" id="restore-preferences" disabled>Restore saved preferences</button>
+<div class="preference-actions"><button id="export-preferences">Export JSON</button><button id="import-preferences">Import JSON</button></div>
+<button class="pause" id="reset-preferences">Reset to defaults</button>
+<button class="pause" id="forget-preferences">Forget saved preferences</button>
+<p class="note" id="preference-status" role="status" aria-live="polite">Save this setup to load it next time.</p>
+<p class="note">Saves visuals, favorites, controls, frame rate, volume, and motion pause on this browser. Music files and accounts are never saved in preferences.</p></section>
+<button class="pause" id="close-settings" style="margin-top:15px">Close settings</button></aside>
+</div>
+<footer><div class="art" aria-hidden="true">♪</div><div class="track"><strong id="track-title">Make room for the music.</strong><small id="track-detail">Choose a source. Find your visual.</small></div><div class="transport"><button class="restart" id="restart" aria-label="Restart track" disabled>↤</button><button class="play" id="play" aria-label="Pause motion">Ⅱ</button></div><input class="seek" type="range" id="seek" min="0" max="1" step="0.001" value="0" aria-label="Playback position"><label class="volume">♪ <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Playback volume"></label></footer>
+<input id="preference-file" type="file" accept="application/json,.json" hidden><input id="file" type="file" accept="audio/*"><div id="toast" class="toast" role="status" hidden></div>
+<script>/*__APP_JS__*/</script>
+</body></html>

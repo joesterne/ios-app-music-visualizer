@@ -80,7 +80,7 @@ groups = []
 file_types = {'.swift':'sourcecode.swift', '.c':'sourcecode.c.c', '.h':'sourcecode.c.h',
               '.plist':'text.plist.xml', '.entitlements':'text.plist.entitlements', '.xcconfig':'text.xcconfig',
               '.xcprivacy':'text.xml', '.md':'net.daringfireball.markdown', '.py':'text.script.python', '.sh':'text.script.sh'}
-for directory in ['App','Audio','Core','Services','Views','Visualizers','Config','Tests','Scripts','Docs']:
+for directory in ['App','Audio','Core','Services','Views','Visualizers','Config','Tests','Scripts','Docs','Web']:
     children = []
     for path in sorted((ROOT / directory).glob('*')):
         if not path.is_file(): continue

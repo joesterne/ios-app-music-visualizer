@@ -1,39 +1,71 @@
 import SwiftUI
 
-struct VisualizerCanvas: View {
+struct VisualizerCanvas: View, Equatable {
     var style: VisualizerStyle
     var palette: VisualPalette
-    var frame: AudioFrame
+    var analyzer: AudioAnalyzer? = nil
+    var playing = false
     var reactive: Bool
     var settings: VisualSettings
     var paused = false
     var preview = false
+    var clock: VisualizerClock? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var origin = Date()
     @State private var frozen: Double?
     private var stopped: Bool { paused || reduceMotion || preview || scenePhase != .active }
 
+    // Parent playback/metadata changes do not redraw unchanged preview cards.
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.style == rhs.style && lhs.palette == rhs.palette && lhs.analyzer === rhs.analyzer
+            && lhs.clock === rhs.clock
+            && lhs.playing == rhs.playing && lhs.reactive == rhs.reactive
+            && lhs.paused == rhs.paused && lhs.preview == rhs.preview
+            && lhs.settings.speed == rhs.settings.speed
+            && lhs.settings.sensitivity == rhs.settings.sensitivity
+            && lhs.settings.glow == rhs.settings.glow
+            && lhs.settings.tronMode == rhs.settings.tronMode && lhs.settings.tronPalette == rhs.settings.tronPalette
+            && (lhs.preview || (lhs.settings.detail == rhs.settings.detail && lhs.settings.fps == rhs.settings.fps))
+    }
+    private var suspendTimeline: Bool {
+        preview || scenePhase != .active || (stopped && !(reactive && playing))
+    }
+    private var interval: Double { 1 / (reduceMotion ? 15 : (stopped ? 30 : settings.fps)) }
+
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1 / (reduceMotion ? 15 : settings.fps), paused: stopped)) { timeline in
-            let elapsed = preview ? 7.0 : (frozen ?? timeline.date.timeIntervalSince(origin))
-            let time = elapsed * settings.speed
-            let input = reactive && !preview ? frame : AudioFrame.ambient(at: time)
-            Canvas(opaque: true, rendersAsynchronously: true) { context, size in
-                VisualRenderer.draw(context: context, size: size, style: style,
-                                    palette: palette, frame: input, time: time,
-                                    sensitivity: settings.sensitivity, glow: settings.glow,
-                                    detail: preview ? 0.3 : settings.detail,
-                                    tronMode: settings.tronMode, tronPalette: settings.tronPalette)
+        ZStack {
+            if style == .yosemite {
+                YosemiteBackdrop(palette: palette).equatable()
+            }
+            TimelineView(.animation(minimumInterval: interval, paused: suspendTimeline)) { timeline in
+                let elapsed = preview ? 7.0 : (clock?.elapsed(at: timeline.date) ?? frozen ?? timeline.date.timeIntervalSince(origin))
+                let time = clock != nil && !preview ? elapsed : elapsed * settings.speed
+                let input = reactive && !preview
+                    ? (playing ? (analyzer?.snapshot() ?? .silent) : .silent)
+                    : AudioFrame.ambient(at: time, includeWaveform: style == .waveform)
+                Canvas(opaque: style != .yosemite, rendersAsynchronously: true) { context, size in
+                    VisualRenderer.draw(context: context, size: size, style: style,
+                                        palette: palette, frame: input, time: time,
+                                        sensitivity: settings.sensitivity, glow: settings.glow,
+                                        detail: preview ? 0.3 : settings.detail,
+                                        tronMode: settings.tronMode, tronPalette: settings.tronPalette)
+                }
             }
         }
-        .onAppear { if stopped { frozen = 0 } }
+        .clipped()
+        .onAppear {
+            if let clock { clock.setSpeed(settings.speed); clock.setPaused(stopped) }
+            else if stopped { frozen = 0 }
+        }
+        .onChange(of: settings.speed) { _, value in clock?.setSpeed(value) }
         .onChange(of: stopped) { _, value in
+            if let clock { clock.setPaused(value); return }
             if value { frozen = Date().timeIntervalSince(origin) }
             else if let frozen { origin = Date().addingTimeInterval(-frozen); self.frozen = nil }
         }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(style == .tron ? "Tron, \(settings.tronMode.title), \(settings.tronPalette.title)" : style.title) visualizer, \(reactive ? "audio reactive" : "ambient animation")")
+        .accessibilityLabel("\(style.title) visualizer, \(reactive ? "audio reactive" : "ambient animation")")
     }
 }
 
@@ -47,6 +79,11 @@ enum VisualRenderer {
         if style == .tron {
             TronRenderer.draw(context: context, size: size, mode: tronMode, palette: tronPalette,
                               frame: frame, time: time, sensitivity: sensitivity, glow: glow, detail: detail)
+            return
+        }
+        if style == .yosemite {
+            YosemiteScene.draw(context: context, size: size, palette: palette, frame: frame,
+                               time: time, sensitivity: sensitivity, glow: glow, detail: detail)
             return
         }
         var context = context
@@ -70,7 +107,8 @@ enum VisualRenderer {
         case .bloom: bloom(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .halo: halo(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .ironMan: ironMan(&context, size, frame, time, colors, sensitivity, glow, detail)
-        case .tron: break // Drawn above with its own color selection.
+        case .tron: break
+        case .yosemite: break // Static backdrop + transparent animated scenery above.
         }
     }
 
@@ -323,6 +361,7 @@ enum VisualRenderer {
                                       _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
         let count = Int(28 + detail * 55)
         var points: [CGPoint] = []
+        points.reserveCapacity(count)
         for i in 0..<count {
             let seed = Double(i)
             let x = 0.5 + sin(seed * 127.1 + t * 0.025) * 0.43
@@ -330,19 +369,29 @@ enum VisualRenderer {
             points.append(CGPoint(x: x * s.width, y: y * s.height))
         }
         let threshold = min(s.width, s.height) * 0.22
+        let thresholdSquared = threshold * threshold
+        var dots = [Path(), Path(), Path()]
         for i in 0..<count {
             for j in (i + 1)..<count {
-                let d = hypot(points[i].x - points[j].x, points[i].y - points[j].y)
-                if d < threshold {
+                let dx = points[i].x - points[j].x, dy = points[i].y - points[j].y
+                let distanceSquared = dx * dx + dy * dy
+                if distanceSquared < thresholdSquared {
+                    let d = sqrt(distanceSquared)
                     var p = Path(); p.move(to: points[i]); p.addLine(to: points[j])
                     c.stroke(p, with: .color(colors[i % 3].opacity((1 - d / threshold) * 0.24)), lineWidth: 0.7)
                 }
             }
             let r = 1 + band(f, i, gain) * 3.6
             let dot = Path(ellipseIn: CGRect(x: points[i].x - r, y: points[i].y - r, width: r * 2, height: r * 2))
-            var halo = c; halo.addFilter(.blur(radius: 5 * glow))
-            halo.fill(dot, with: .color(colors[i % 3].opacity(0.8)))
-            c.fill(dot, with: .color(colors[i % 3]))
+            dots[i % 3].addPath(dot)
+        }
+        // One halo per palette color, instead of one blur per particle.
+        for index in dots.indices {
+            if glow > 0.04 {
+                var halo = c; halo.addFilter(.blur(radius: 5 * glow))
+                halo.fill(dots[index], with: .color(colors[index].opacity(0.8)))
+            }
+            c.fill(dots[index], with: .color(colors[index]))
         }
     }
     private static func terrain(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,

@@ -1,4 +1,5 @@
-// Use Xcode 16 or newer. No third-party Swift packages are required.
+// iOS target: Xcode 27.1 SDK for Duo arrangements (runtime fallback to iOS 17).
+// No third-party Swift packages are required.
 SWIFT_VERSION = 5.0
 SWIFT_STRICT_CONCURRENCY = targeted
 CLANG_C_LANGUAGE_STANDARD = gnu11
@@ -8,8 +9,8 @@ SWIFT_OBJC_BRIDGING_HEADER = $(SRCROOT)/Config/Afterglow-Bridging-Header.h
 HEADER_SEARCH_PATHS = $(inherited) $(SRCROOT)/Core
 GENERATE_INFOPLIST_FILE = NO
 ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon
-MARKETING_VERSION = 0.1.0
-CURRENT_PROJECT_VERSION = 1
+MARKETING_VERSION = 0.3.0
+CURRENT_PROJECT_VERSION = 3
 PRODUCT_NAME = Afterglow
 // Replace this prefix with your own unique reverse-domain identifier before signing.
 BUNDLE_ID_PREFIX = com.example.afterglow

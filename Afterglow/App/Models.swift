@@ -47,7 +47,7 @@ enum AudioSource: String, CaseIterable, Identifiable {
 }
 
 enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
-    case aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan
+    case yosemite, aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan
     var id: String { rawValue }
     var title: String { self == .ironMan ? "Iron Man" : rawValue.capitalized }
     var subtitle: String {
@@ -63,6 +63,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .tron: "Enter the grid"
         case .halo: "Beyond the ringworld"
         case .ironMan: "Power the arc reactor"
+        case .yosemite: "Clouds over the valley"
         }
     }
     var symbol: String {
@@ -78,6 +79,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .tron: "cpu"
         case .halo: "globe.americas"
         case .ironMan: "bolt.circle"
+        case .yosemite: "cloud.sun"
         }
     }
 }
@@ -135,15 +137,20 @@ struct VisualSettings: Codable, Equatable {
     }
     static func load() -> VisualSettings {
         guard let data = UserDefaults.standard.data(forKey: "visualSettings.v1"),
-              var value = try? JSONDecoder().decode(Self.self, from: data) else { return .init() }
+              let value = try? JSONDecoder().decode(Self.self, from: data) else { return .init() }
+        return value.validated()
+    }
+    func validated() -> Self {
+        var value = self
         value.sensitivity = value.sensitivity.isFinite ? min(3, max(0.2, value.sensitivity)) : 1.25
         value.speed = value.speed.isFinite ? min(2, max(0.1, value.speed)) : 0.65
         value.glow = value.glow.isFinite ? min(1, max(0, value.glow)) : 0.6
         value.detail = value.detail.isFinite ? min(1, max(0.2, value.detail)) : 0.65
         value.fps = value.fps == 30 ? 30 : 60
+        var seen = Set<VisualizerStyle>()
+        value.favorites = value.favorites.filter { seen.insert($0).inserted }
         return value
     }
-    func save() { if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: "visualSettings.v1") } }
 }
 
 extension Color {
