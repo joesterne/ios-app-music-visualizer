@@ -1,6 +1,6 @@
 # Afterglow — Music Visualizer
 
-A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from fourteen visualizers, including Tron, Halo, and Iron Man.
+A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from fifteen visualizers, including Tron, Halo, and Iron Man.
 
 ## Run locally
 
@@ -14,7 +14,7 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory Afterglow
 
 Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop the server. If port 8765 is already in use, try 8766 and use that port in the URL.
 
-Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all fourteen visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
+Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all fifteen visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
 
 ## Yosemite, Duo, and local preferences
 
@@ -40,11 +40,13 @@ See the [full setup guide](Afterglow/README.md) for signing, music-source capabi
 
 ## Visuals and controls
 
+- **Fallout:** two numbered, toothed vault doors roll along a hazard-marked rail behind twin Pip-Boy-style wrist terminals. Their green CRT screens type looping code, sweep scanlines, and display audio-responsive traces. Speed and Pause/Reduce Motion control movement; sensitivity and glow control the signal and phosphor. The scene keeps its olive, amber, and green theme across palette selections. See [scene notes](Afterglow/Docs/Fallout.md).
+
 - **Tron:** Light cycles, Identity discs, and Circuit expansion; each in light blue, orange, or red.
 - **Halo:** a glowing ringworld, stars, orbiting energy, and audio-responsive spires.
 - **Iron Man:** a white-blue arc reactor, rotating red/gold rings, and reactive HUD accents.
 - **React to audio:** saved preference for measured audio response or independent animation. Streaming companions use independent animation because they do not supply audio samples.
-- **Gallery scrolling:** visible horizontal control for all fourteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
+- **Gallery scrolling:** visible horizontal control for all fifteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
 
 The renderers reuse Halo depth orders and browser frequency ranges, skip hidden browser rendering/analysis, and reduce native frame publication during independent animation. No device-specific speedup has been benchmarked.
 
