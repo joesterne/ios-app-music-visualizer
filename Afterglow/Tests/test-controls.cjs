@@ -18,7 +18,7 @@ async function fixture(storage=new Map()){
   Object.defineProperty(w,'localStorage',{value:{getItem(k){if(blocked)throw Error('blocked');return storage.get(k)||null},setItem(k,v){if(blocked)throw Error('blocked');storage.set(k,v)},removeItem(k){if(blocked)throw Error('blocked');storage.delete(k)}}});
   w.Audio=class{constructor(){this.paused=true;this.ended=false;this.duration=NaN;this.currentTime=0;this.volume=.8}pause(){this.paused=true;this.onpause?.()}async play(){this.paused=false;this.onplay?.()}};
   const node=()=>({connect(){},disconnect(){}});
-  w.AudioContext=class{constructor(){this.sampleRate=48000;this.destination={}}resume(){return resumeGate||Promise.resolve()}createAnalyser(){return {...node(),fftSize:2048,frequencyBinCount:1024,getFloatFrequencyData(a){reads++;a.fill(-40)},getFloatTimeDomainData(a){a.fill(.1)}}}createMediaElementSource(){return node()}createMediaStreamSource(){return node()}};
+  w.AudioContext=class{constructor(){this.sampleRate=48000;this.destination={}}resume(){return resumeGate||Promise.resolve()}createAnalyser(){return {...node(),fftSize:2048,frequencyBinCount:1024,getFloatFrequencyData(a){reads++;a.fill(-40)},getFloatTimeDomainData(a){a.fill(.1)}}}createGain(){return {...node(),gain:{value:1}}}createMediaElementSource(){return node()}createMediaStreamSource(){return node()}};
   Object.defineProperty(w.navigator,'mediaDevices',{value:{getUserMedia:()=>new Promise((resolve,reject)=>{media.pending={resolve,reject}})}});
  }});
  const w=dom.window,d=w.document;w.paints=paints;w.eval('render=(canvas,kind,time,bands,wave,small=false)=>window.paints.push({kind,time,small});');
@@ -31,7 +31,7 @@ async function fixture(storage=new Map()){
 (async()=>{
  const a=await fixture();const {w,d,run,click,event,tick,settle}=a;
  check([...d.querySelectorAll('button')].every(button=>typeof button.onclick==='function'),'every rendered button has a handler');
- check(d.querySelectorAll('.card').length===12,'all twelve visualizer buttons exist');
+ check(d.querySelectorAll('.card').length===14,'all fourteen visualizer buttons exist');
  for(const card of d.querySelectorAll('.card')){card.click();check(run('style')===card.dataset.style,'visualizer '+card.dataset.style);check(card.getAttribute('aria-pressed')==='true','selected visualizer announced')}
  for(const button of d.querySelectorAll('.palette')){button.click();check(run('palette')===button.dataset.palette,'full palette '+button.dataset.palette)}
  for(const button of d.querySelectorAll('[data-duo-palette]')){button.click();check(run('palette')===button.dataset.duoPalette,'quick palette '+button.dataset.duoPalette)}
@@ -46,9 +46,10 @@ async function fixture(storage=new Map()){
  click('[data-style=tron]');await event('tron-mode','change','identityDiscs');click('[data-tron-color=Orange]');
  check(run('tronMode')==='identityDiscs'&&run('tronColor')==='Orange','Tron controls change mode and color');
  // Explicit persistence and complete round-trip across a new document.
- click('#save-preferences');const saved=JSON.parse(a.storage.get(key));check(saved.volume===.42&&saved.fps===30&&saved.speed===.85,'save includes playback and render preferences');
+ d.getElementById('audio-reactive').checked=false;await event('audio-reactive','change');
+ click('#save-preferences');const saved=JSON.parse(a.storage.get(key));check(saved.audioReactive===false,'response preference is saved');check(saved.volume===.42&&saved.fps===30&&saved.speed===.85,'save includes playback and render preferences');
  click('#reset-preferences');check(run('gain')===1.25&&run('fps')===60,'reset defaults');click('#restore-preferences');check(run('gain')===2.1&&run('speed')===.85,'restore snapshot');
- const b=await fixture(a.storage);check(b.run('gain')===2.1&&b.run('style')===saved.style&&b.run('audio.volume')===.42,'startup restore');check(b.run('tronMode')==='identityDiscs'&&b.run('tronColor')==='Orange','Tron preferences restore');check(b.run('source')==='ambient'&&b.run('audio.paused'),'no source or media autoplay on restore');b.close();
+ const b=await fixture(a.storage);check(b.run('audioReactive')===false,'response preference restores without autoplay');check(b.run('gain')===2.1&&b.run('style')===saved.style&&b.run('audio.volume')===.42,'startup restore');check(b.run('tronMode')==='identityDiscs'&&b.run('tronColor')==='Orange','Tron preferences restore');check(b.run('source')==='ambient'&&b.run('audio.paused'),'no source or media autoplay on restore');b.close();
  let preferencePicker=0;d.getElementById('preference-file').click=()=>preferencePicker++;click('#import-preferences');check(preferencePicker===1,'import preferences opens JSON picker');
  click('#export-preferences');check(a.blobs.at(-1).type==='application/json','export JSON');check(a.opened.at(-1)[1]==='Afterglow-preferences.json','export filename');
  const importInput={files:[{size:120,text:async()=>JSON.stringify({version:1,style:'orbit',palette:'Glacier',gain:999,speed:-1,volume:99,favorites:['orbit','orbit','bad']})}],value:'x'};
@@ -63,6 +64,17 @@ async function fixture(storage=new Map()){
  await event('seek','input',.25);check(run('audio.currentTime')===30,'seek');click('#restart');check(run('audio.currentTime')===0,'restart');await d.getElementById('play').onclick();check(run('audio.paused'),'pause playback');await d.getElementById('play').onclick();check(!run('audio.paused'),'resume playback');
  for(const source of ['spotify','apple','other']){click('[data-source="'+source+'"]');check(run('source')===source,'source '+source);check(a.opened.at(-1)[0].startsWith('https://'),'launcher opens URL');check(d.querySelector('#toast a'),'launcher has fallback link')}
  const prior=run('source');click('[data-source=system]');check(run('source')===prior&&d.getElementById('toast').textContent.includes('native Mac'),'system button explains native-only capability');
+ // Integrated styles and audio controls retain explicit snapshots and playback.
+ for(const visual of ['superMario','spaceFlight','yosemite']){
+  run(`pickStyle('${visual}');audioReactive=false;savePreferences();resetPreferences();restorePreferences()`);
+  check(run('style')===visual&&!run('audioReactive'),'new scene and response survive save/restore: '+visual);
+ }
+ run("source='local';audio.paused=false;audioReactive=false;updatePlay();requestRender()");
+ const independentReads=a.reads();tick();check(a.reads()===independentReads&&!run('audio.paused'),'independent mode skips analysis without pausing playback');
+ d.getElementById('audio-reactive').checked=true;await event('audio-reactive','change');tick();check(a.reads()>independentReads&&!run('audio.paused'),'response resumes analysis without interrupting playback');
+ const gallery=d.getElementById('gallery'),scroll=d.getElementById('gallery-scroll');
+ Object.defineProperties(gallery,{scrollWidth:{value:1600,configurable:true},clientWidth:{value:600,configurable:true}});
+ await event('gallery-scroll','input',100);check(gallery.scrollLeft===1000,'gallery slider reaches final cards');gallery.scrollLeft=500;gallery.onscroll();check(Number(scroll.value)===50,'manual gallery scroll syncs slider');
  // Latest source wins when permission or AudioContext resume resolves late.
  const pending=w.selectSource('mic');await settle();const old=a.media.pending;click('[data-source=ambient]');old.reject(Error('old rejection'));await pending;check(run('source')==='ambient','late permission error does not overwrite newer source');
  let stops=0;const track={stop(){stops++}};const pending2=w.selectSource('mic');await settle();click('[data-source=spotify]');a.media.pending.resolve({getTracks:()=>[track]});await pending2;check(stops===1&&run('source')==='spotify','stale microphone stream is stopped');
@@ -71,7 +83,7 @@ async function fixture(storage=new Map()){
  // Count expensive thumbnail passes rather than claiming a wall-clock benchmark.
  run("fps=60;paused=false;source='ambient';pickPalette('Ultraviolet');gain=1.25;glow=.6;requestThumbnails()");tick();a.paints.length=0;
  for(let i=0;i<50;i++)await event('speed','input',.2+i*.02);tick();check(a.paints.filter(p=>p.small).length===0,'50 speed events do not redraw static thumbnails');
- a.paints.length=0;for(let i=0;i<50;i++)await event('gain','input',.2+i*.04);tick();check(a.paints.filter(p=>p.small).length===12,'50 sensitivity events coalesce into one twelve-card pass');
+ a.paints.length=0;for(let i=0;i<50;i++)await event('gain','input',.2+i*.04);tick();check(a.paints.filter(p=>p.small).length===14,'50 sensitivity events coalesce into one fourteen-card pass');
  a.media.motion({matches:true});tick();check(d.getElementById('pause-motion').disabled&&a.raf.size===0,'Reduce Motion change suspends ambient animation');
  run("source='local';audio.pause();paused=true;clearSignal();requestRender()");const readsBefore=a.reads();tick();check(a.reads()===readsBefore&&a.raf.size===0,'paused audio and motion perform no analysis or idle redraw');
  check(a.media.errors.length===0,'no uncaught UI event errors');a.close();

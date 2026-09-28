@@ -12,7 +12,12 @@ final class MacAudioCapture: NSObject, SCStreamOutput, SCStreamDelegate, @unchec
 
     @MainActor func start() async throws {
         await stop()
-        let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        let content: SCShareableContent
+        do {
+            content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+        } catch {
+            throw AfterglowError.message("System audio could not connect. Check Afterglow’s screen/system-audio recording permission in System Settings → Privacy & Security, then restart Afterglow and try again. \(error.localizedDescription)")
+        }
         try Task.checkCancellation()
         guard let display = content.displays.first else {
             throw AfterglowError.message("No display is available for system audio capture.")

@@ -8,6 +8,7 @@ enum NativePreferenceRegression {
         let defaults = UserDefaults(suiteName: name)!
         defer { defaults.removePersistentDomain(forName: name) }
         var settings = VisualSettings()
+        settings.audioReactive = false
         settings.style = .yosemite; settings.palette = .glacier
         settings.tronMode = .identityDiscs; settings.tronPalette = .orange
         settings.speed = 0.85; settings.fps = 30; settings.favorites = [.orbit, .orbit, .yosemite]
@@ -16,6 +17,7 @@ enum NativePreferenceRegression {
         assert(saved.settings.style == .yosemite && saved.settings.palette == .glacier)
         assert(saved.settings.speed == 0.85 && saved.settings.fps == 30)
         assert(saved.settings.tronMode == .identityDiscs && saved.settings.tronPalette == .orange)
+        assert(!saved.settings.audioReactive)
         assert(saved.volume == 0.42 && saved.motionPaused)
         assert(saved.settings.favorites == [.orbit, .yosemite])
         settings.speed = .nan; settings.sensitivity = 999; settings.glow = -1

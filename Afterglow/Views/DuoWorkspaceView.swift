@@ -58,7 +58,7 @@ struct DuoWorkspaceView: View {
             ZStack(alignment: .bottomLeading) {
                 VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
                                  analyzer: model.analyzer, playing: model.isPlaying,
-                                 reactive: model.source.reactive, settings: model.settings,
+                                 reactive: model.visualsReactive, settings: model.settings,
                                  paused: model.motionPaused, clock: clock)
                     .equatable()
                 LinearGradient(colors: [.clear, .black.opacity(0.58)], startPoint: .center, endPoint: .bottom)
@@ -95,6 +95,7 @@ struct StudioControlDeck: View {
                 }.buttonStyle(.bordered)
                     .accessibilityLabel(model.motionPaused ? "Resume visual motion" : "Pause visual motion")
             }
+            Toggle("React to audio", isOn: $model.settings.audioReactive)
             if model.settings.style == .tron { TronControls() }
             if !focused {
                 Text("Find your atmosphere.").font(.system(size: 24, weight: .light, design: .rounded))

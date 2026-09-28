@@ -23,7 +23,7 @@ struct PlayerBar: View {
                         Image(systemName: "speaker.wave.2").font(.system(size: 12)).foregroundStyle(StudioTheme.muted)
                         Slider(value: $model.volume, in: 0...1).frame(width: 95).accessibilityLabel("Local playback volume")
                     } else {
-                        Text(model.source.reactive ? "LIVE INPUT" : "AMBIENT").font(.system(size: 8, design: .monospaced))
+                        Text(model.source.reactive ? (model.isPlaying ? "LIVE INPUT" : "INPUT STOPPED") : "AMBIENT").font(.system(size: 8, design: .monospaced))
                             .tracking(1).foregroundStyle(StudioTheme.muted)
                     }
                 }

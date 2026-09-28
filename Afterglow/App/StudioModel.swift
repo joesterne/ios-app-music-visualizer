@@ -68,12 +68,13 @@ final class StudioModel: ObservableObject {
         })
         #endif
     }
-    var modeLabel: String { source.reactive ? (isPlaying ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION" }
+    var visualsReactive: Bool { settings.audioReactive && source.reactive }
+    var modeLabel: String { visualsReactive ? (isPlaying ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION" }
     var hasPlayableQueue: Bool {
         source == .local ? selectedTrack != nil && !tracks.isEmpty : source == .appleMusic && apple.hasCurrentEntry
     }
     var modeDescription: String {
-        source.reactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
+        visualsReactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
     }
     @Published private(set) var artworkURL: URL?
 
@@ -134,7 +135,7 @@ final class StudioModel: ObservableObject {
             #if os(iOS)
             if !active { local.pause() }
             #endif
-        } catch { local.clear(); selectedTrack = nil; self.error = error.localizedDescription }
+        } catch { local.clear(); analyzer.reset(); selectedTrack = nil; self.error = error.localizedDescription }
     }
     func removeTrack(_ track: LocalTrack) {
         guard !busy, !importing else { return }

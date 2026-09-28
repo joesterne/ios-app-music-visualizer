@@ -49,6 +49,8 @@ body.immersive .stage{height:100dvh;width:100dvw}
 @media(min-width:1201px){body.settings-hidden .inspector{display:none}body.settings-hidden .shell{grid-template-columns:216px minmax(0,1fr)}}
 
 #palettes[hidden],#tron-palette-note[hidden]{display:none}.tron-controls{margin:16px 0 22px;padding:16px;border:1px solid var(--accent);border-radius:14px;background:#0b151e;display:flex;flex-wrap:wrap;gap:14px;align-items:center}.tron-controls[hidden]{display:none}.tron-controls .micro{color:var(--accent)}.tron-controls select{background:#101c27;color:#eff0f7;border:1px solid #ffffff24;padding:10px;border-radius:8px;min-height:44px}.tron-colors{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.tron-colors button{font-size:11px;min-height:44px;padding:8px 12px;border:1px solid transparent;border-radius:22px;display:flex;align-items:center;gap:7px}.tron-colors button[aria-pressed=true]{border-color:var(--accent);background:#ffffff0b}.tron-colors button[aria-pressed=true]:after{content:'✓'}.tron-colors i{display:block;width:12px;height:12px;border-radius:50%}select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}@media(max-width:760px){.tron-colors{margin-left:0}.tron-controls{gap:10px}.tron-controls select{margin-left:auto;max-width:70%}}
+
+.response-controls{display:flex;align-items:center;gap:16px;margin-top:18px;flex-wrap:wrap}.response-controls .note{margin:0}
 </style>
 </head>
 <body>
@@ -68,7 +70,8 @@ body.immersive .stage{height:100dvh;width:100dvw}
 <div class="mobile-sources"><button data-source="ambient" class="selected">Ambient</button><button data-source="local">Import audio</button><button data-source="spotify">Spotify ↗</button><button data-source="apple">Apple Music ↗</button><button data-source="mic">Microphone</button></div>
 <section class="stage" aria-label="Visualizer"><canvas id="visual" aria-label="Animated music visualizer"></canvas><div class="stage-top"><span id="mode" class="badge">AMBIENT MOTION</span><button id="favorite" aria-label="Toggle favorite visualizer" style="font-size:23px;color:var(--accent)">♡</button></div><div class="stage-bottom"><div><h2 id="visual-name">Yosemite</h2><p id="visual-subtitle">Clouds over the valley</p></div><button id="expand" aria-label="Toggle immersive mode">⤢</button></div></section>
 <section class="control-deck" aria-label="Visualizer control deck"><h2 class="deck-title">Find your atmosphere.</h2><section id="tron-controls" class="tron-controls" aria-label="Tron options" hidden><span class="micro">TRON / ENTER THE GRID</span><select id="tron-mode" aria-label="Tron animation"><option value="lightCycles">Light cycles</option><option value="identityDiscs">Identity discs</option><option value="circuitExpansion">Circuit expansion</option></select><div class="tron-colors" aria-label="Tron colors"><button data-tron-color="Light blue" aria-pressed="true"><i style="background:#66deff"></i>Light blue</button><button data-tron-color="Orange" aria-pressed="false"><i style="background:#ff8c30"></i>Orange</button><button data-tron-color="Red" aria-pressed="false"><i style="background:#ff3347"></i>Red</button></div></section>
-<div class="gallery-head"><span class="micro">VISUALIZERS</span><span class="micro" id="visual-count">09 / CHOOSE YOUR MOOD</span></div><div class="cards" id="gallery"></div>
+<div class="response-controls"><label><input id="audio-reactive" type="checkbox" checked> React to audio</label><span class="note" id="response-note"></span></div>
+<div class="gallery-head"><span class="micro">VISUALIZERS</span><span class="micro" id="visual-count">09 / CHOOSE YOUR MOOD</span></div><div class="cards" id="gallery"></div><input id="gallery-scroll" type="range" min="0" max="100" step="0.1" value="0" aria-label="Scroll visualizers">
 <div class="duo-controls">
 <div class="duo-palette" id="duo-palettes" aria-label="Quick palettes"></div>
 <label class="control"><div><span>Motion</span><output id="duo-speed-value">0.7×</output></div><input id="duo-speed" type="range" min="0.1" max="2" step="0.05" value="0.65"></label>
@@ -97,11 +100,15 @@ body.immersive .stage{height:100dvh;width:100dvw}
 <script>
 "use strict";
 const $=id=>document.getElementById(id);
-const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor']];
+const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.']];
 const palettes={Ultraviolet:['#91a1ff','#cb79ff','#f3b0e6'],Glacier:['#55dcd9','#68b2ff','#c6fff2'],Ember:['#ff9760','#f25d86','#ffe0a3'],Candy:['#ff80c7','#868bff','#57eee0'],Monochrome:['#d1d7e6','#ffffff','#737f99']};
 const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reducedMotion=motionPreference.matches;
 function motionStopped(){return paused||reducedMotion}
 let fps=60;
+let audioReactive=true;
+try{audioReactive=localStorage.getItem('afterglow.audioReactive')!=='false'}catch{}
+const haloOrders=new Map();
+function haloOrder(n){if(!haloOrders.has(n))haloOrders.set(n,Array.from({length:n},(_,i)=>i).sort((a,b)=>Math.sin(a/n*Math.PI*2)-Math.sin(b/n*Math.PI*2)));return haloOrders.get(n)}
 let style='yosemite',palette='Ultraviolet',source='ambient',paused=false,gain=1.25,speed=.65,glow=.6,detail=.65,time=7,last=0,activeMic=null,audioContext=null,analyzer=null,playerNode=null,micNode=null,objectURL=null;
 let favorites=new Set(['aurora','orbit']);const audio=new Audio();audio.volume=.8;audio.preload='auto';
 const bands=new Float32Array(64),wave=new Float32Array(256);let rms=.12;
@@ -226,7 +233,43 @@ function renderYosemite(canvas,t,small=false){
 }
 // END YOSEMITE RENDERER
 
-function render(canvas,kind,t,b,w,small=false){if(kind==='tron'){renderTron(canvas,t,b,small);return;}if(kind==='yosemite'){renderYosemite(canvas,t,small);return}const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
+function renderSpace(canvas,t,b,small){
+ const c=canvas.getContext('2d'),W=canvas.width,H=canvas.height,U=Math.min(W,H),C=palettes[palette],energy=Math.min(1,Math.max(0,rms*gain*3)),bank=Math.sin(t*.52)*.11,cx=W*(.5+bank),cy=H*(.45+Math.cos(t*.37)*.055);
+ const point=(x,y,z)=>[cx+U*(x*Math.cos(bank)-y*Math.sin(bank))/z,cy+U*(x*Math.sin(bank)+y*Math.cos(bank))/z];
+ const line=(pts,color,width=1)=>{c.beginPath();pts.forEach((p,i)=>i?c.lineTo(...p):c.moveTo(...p));c.strokeStyle=color;c.lineWidth=width;c.stroke()};
+ c.globalAlpha=1;c.globalCompositeOperation='source-over';c.shadowBlur=0;c.fillStyle='#04061a';c.fillRect(0,0,W,H);
+ const bg=c.createRadialGradient(cx,cy,0,cx,cy,Math.max(W,H)*.7);bg.addColorStop(0,C[1]+'45');bg.addColorStop(1,'#04061a');c.fillStyle=bg;c.fillRect(0,0,W,H);
+ for(let i=0;i<Math.floor(90+(small?.3:detail)*150);i++){const a=i*2.399963,r=.16+Math.abs(Math.sin(i*43.7))*1.5,z=.16+(1-(i*.618+t*.28)%1)*3;c.globalAlpha=.28+.6/(z+1);line([point(Math.cos(a)*r,Math.sin(a)*r,z),point(Math.cos(a)*r,Math.sin(a)*r,z+.05+energy*.1)],'#fff',.5+1/(z+1))}c.globalAlpha=1;
+ const objects=Array.from({length:9},(_,i)=>[i,.22+((i/9-t*.045)%1+1)%1*3.8]).sort((a,b)=>b[1]-a[1]);
+ for(const [i,z] of objects){const side=i%2===0?-1:1,[x,y]=point(side*(.42+i%3*.12+.16/z),Math.sin(i*2.7)*.38,z),r=U*(i%3===0?.22:.07)/z;if(x+r*2<0||x-r*2>W||y+r*2<0||y-r*2>H)continue;
+ if(i%3===0){const g=c.createRadialGradient(x-r*.4,y-r*.45,0,x-r*.4,y-r*.45,r*1.7);g.addColorStop(0,C[i%3]);g.addColorStop(1,'#060919');c.fillStyle=g;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();c.strokeStyle=C[0];c.globalAlpha=.3+glow*.35;c.lineWidth=1.5;c.stroke();c.globalAlpha=.6;c.beginPath();c.ellipse(x,y,r*1.6,r*.3,0,0,Math.PI*2);c.lineWidth=Math.max(1,r*.045);c.strokeStyle=C[2];c.stroke();c.globalAlpha=1;
+ }else{const pts=[[x,y-r],[x+r*1.7,y+r*.6],[x+r*.3,y+r*.3],[x,y+r],[x-r*.3,y+r*.3],[x-r*1.7,y+r*.6],[x,y-r]];c.beginPath();pts.forEach((p,j)=>j?c.lineTo(...p):c.moveTo(...p));c.fillStyle='#263859';c.fill();line(pts,C[0],Math.max(1,r*.045));for(const side of [-1,1])line([[x+side*r*.35,y+r*.4],[x+side*r*.35,y+r*(1.2+energy)]],C[2],Math.max(2,r*.13))}}
+ c.globalAlpha=.6;for(const side of [-1,1])line([[side<0?0:W,H*.72],[W*.5+side*W*.27,H*.89],[W*.5+side*W*.16,H]],C[0],2);
+ line([[W*.5-13,H*.45],[W*.5-5,H*.45]],C[0]);line([[W*.5+5,H*.45],[W*.5+13,H*.45]],C[0]);c.globalAlpha=1;
+}
+const marioSprite=["....RRRRR...", "...RRRRRRRR.", "...BBBSSKS..", "..BSBSSSKSS.", "..BSBBSSSKSS", "...BSSSSKKK.", "....SSSSSS..", "...RRBRR....", "..RRRBRBRR..", ".RRRRBBBBRR.", ".SSRBYYBRSS.", ".SSSBBBBSSS.", "...BBBBBB...", "..BBB..BBB..", ".KKK....KKK.", "KKKK....KKKK"];
+function renderMario(canvas,t,b){
+ const ctx=canvas.getContext('2d'),scale=canvas.height/240,width=canvas.width/scale,travel=Math.max(0,t)*38%640,heroX=width*.28,camera=travel-heroX;
+ const box=(x,y,w,h,color)=>{ctx.fillStyle=color;ctx.fillRect(x*scale,y*scale,w*scale,h*scale)};
+ const grass='#52c447',soil='#8f4721',gold='#ffc42e';
+ ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;
+ box(0,0,width,240,'#19386e');
+ for(let i=-1;i<=Math.ceil(width/100)+2;i++){const x=i*100-travel*.2%100;box(x,56,34,9,'#c0d5ed');box(x+8,49,18,8,'#c0d5ed');for(let j=0;j<5;j++)box(x+j*10,174-Math.min(j,4-j)*11,10,28+Math.min(j,4-j)*11,'#28594e')}
+ box(0,190,width,50,soil);box(0,188,width,5,grass);
+ for(let i=-1;i<=Math.ceil(width/16)+2;i++){const x=i*16-travel%16;box(x,198,14,2,'#66351e');box(x,218,14,2,'#66351e');box(x,200,2,16,'#66351e')}
+ for(let lap=Math.floor(camera/640)-1;lap<=Math.ceil((camera+width)/640)+1;lap++){
+  const offset=lap*640-camera;
+  for(const p of [160,400]){const x=offset+p;box(x,119,18,18,gold);box(x+2,121,14,2,'#ffe6a3');for(const [dx,dy,w,h] of [[7,123,6,3],[10,126,3,3],[7,129,3,2],[7,133,3,2]])box(x+dx,dy,w,h,soil)}
+  for(const p of [280,500]){const x=offset+p;box(x-12,158,24,30,grass);box(x-16,150,32,10,grass);box(x-8,161,4,27,'#92ec7e');box(x+8,161,4,27,'#278137')}
+  for(let j=0;j<8;j++){const x=offset+115+j*48,pulse=Math.min(1,Math.max(0,b[j*8]*gain));ctx.globalAlpha=glow*.35;box(x-4,90-pulse*9,10,14,gold);ctx.globalAlpha=1;box(x-2,92-pulse*9,6,10,gold)}
+  box(offset+610,76,3,112,'#fff');box(offset+589,80,21,14,palettes[palette][0]);box(offset+606,71,10,6,gold);
+ }
+ let jump=0;for(const obstacle of [280,500]){const distance=Math.abs(travel-obstacle);if(distance<64)jump=Math.max(jump,86*(1-(distance/64)**2))}
+ const step=Math.floor(t*10)%2===0?-1:1,colors={R:'#f83232',B:'#1f45d9',S:'#ffba75',K:'#381f14',Y:gold};
+ marioSprite.forEach((line,row)=>{[...line].forEach((pixel,column)=>{if(colors[pixel])box(heroX+(column-6)*2+(row>12&&jump===0?step*(column<6?-1:1):0),188-jump-32+row*2,2,2,colors[pixel])})});
+}
+
+function render(canvas,kind,t,b,w,small=false){if(kind==='spaceFlight'){renderSpace(canvas,t,b,small);return}if(kind==='superMario'){renderMario(canvas,t,b);return}if(kind==='tron'){renderTron(canvas,t,b,small);return;}if(kind==='yosemite'){renderYosemite(canvas,t,small);return}const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
 if(kind==='ironMan'){
  const cx=W*.5,cy=H*.46,radius=D*.29,red='#ff493b',gold='#ffd080',cyan='#75e8ff',energy=small?.35:Math.min(1,Math.max(0,rms*gain*3));
  const point=(a,r)=>[cx+Math.cos(a)*r,cy+Math.sin(a)*r];
@@ -244,7 +287,7 @@ if(kind==='halo'){
  const point=(a,r,lift=0)=>{const x=Math.cos(a)*r,y=Math.sin(a)*r*flatten-lift;return[W*.5+x*Math.cos(tilt)-y*Math.sin(tilt),H*.47+x*Math.sin(tilt)+y*Math.cos(tilt)]};
  const quality=small?.3:detail;
  for(let i=0;i<Math.floor(30+quality*65);i++){const x=Math.abs(Math.sin(i*127.1)*43758.5453%1)*W,y=Math.abs(Math.sin(i*311.7)*96321.9123%1)*H,r=(i%7===0?1.3:.65)*Math.max(.65,D/350);ctx.globalAlpha=.18+.3*(.5+.5*Math.sin(t*.4+i));ctx.fillStyle=C[2];ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill()}
- const n=Math.floor(48+quality*48),order=Array.from({length:n},(_,i)=>i).sort((a,b)=>Math.sin(a/n*Math.PI*2)-Math.sin(b/n*Math.PI*2));
+ const n=Math.floor(48+quality*48),order=haloOrder(n);
  for(const i of order){const a=i/n*Math.PI*2,b=(i+1)/n*Math.PI*2,v=level(Math.floor(i*64/n)),points=[point(a,radius*.82),point(a,radius),point(b,radius),point(b,radius*.82)];ctx.beginPath();points.forEach(([x,y],j)=>j?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.globalAlpha=.10+v*.18;ctx.fillStyle=C[i%5===0?1:0];ctx.fill();stroke([point(a,radius*.82),point(a,radius)],C[1],.35,.7);if(i%3===0)stroke([point(a,radius*.91),point(a,radius*.91,D*(.025+v*.13))],C[2],.4+v*.5,1.2)}
  for(const factor of [.82,.86,1])stroke(Array.from({length:129},(_,i)=>point(i/128*Math.PI*2,radius*factor)),C[factor===.86?1:0],.9,factor===.86?.8:2);
  for(let pulse=0;pulse<3;pulse++)stroke(Array.from({length:19},(_,i)=>point(t*.22+pulse*Math.PI*2/3+i*.018,radius*.96)),C[2],.9,2.5);
@@ -268,16 +311,16 @@ const preferenceKey='afterglow.preferences.v1';let savedPreferences=null;
 function bounded(value,min,max,fallback){return typeof value==='number'&&Number.isFinite(value)?Math.min(max,Math.max(min,value)):fallback}
 function normalizePreferences(value){
  if(!value||typeof value!=='object'||Array.isArray(value)||value.version!==1)throw new Error('This is not a supported Afterglow preference file.');
- return {version:1,tronMode:tronModes.some(m=>m[0]===value.tronMode)?value.tronMode:'lightCycles',tronColor:Object.hasOwn(tronColors,value.tronColor)?value.tronColor:'Light blue',style:styles.some(s=>s[0]===value.style)?value.style:'yosemite',palette:Object.hasOwn(palettes,value.palette)?value.palette:'Ultraviolet',gain:bounded(value.gain,.2,3,1.25),speed:bounded(value.speed,.1,2,.65),glow:bounded(value.glow,0,1,.6),detail:bounded(value.detail,.2,1,.65),fps:value.fps===30?30:60,volume:bounded(value.volume,0,1,.8),paused:value.paused===true,favorites:Array.isArray(value.favorites)?[...new Set(value.favorites.filter(s=>styles.some(item=>item[0]===s)))]:['aurora','orbit']};
+ return {version:1,audioReactive:value.audioReactive!==false,tronMode:tronModes.some(m=>m[0]===value.tronMode)?value.tronMode:'lightCycles',tronColor:Object.hasOwn(tronColors,value.tronColor)?value.tronColor:'Light blue',style:styles.some(s=>s[0]===value.style)?value.style:'yosemite',palette:Object.hasOwn(palettes,value.palette)?value.palette:'Ultraviolet',gain:bounded(value.gain,.2,3,1.25),speed:bounded(value.speed,.1,2,.65),glow:bounded(value.glow,0,1,.6),detail:bounded(value.detail,.2,1,.65),fps:value.fps===30?30:60,volume:bounded(value.volume,0,1,.8),paused:value.paused===true,favorites:Array.isArray(value.favorites)?[...new Set(value.favorites.filter(s=>styles.some(item=>item[0]===s)))]:['aurora','orbit']};
 }
-function currentPreferences(){return normalizePreferences({version:1,tronMode,tronColor,style,palette,gain,speed,glow,detail,fps,volume:audio.volume,paused,favorites:[...favorites]})}
+function currentPreferences(){return normalizePreferences({version:1,audioReactive,tronMode,tronColor,style,palette,gain,speed,glow,detail,fps,volume:audio.volume,paused,favorites:[...favorites]})}
 function preferenceStatus(text){$('preference-status').textContent=text;$('restore-preferences').disabled=!savedPreferences}
 function syncControls(){
  for(const [name,value] of Object.entries({gain,speed,glow,detail})){$(name).value=value;$(name+'-value').textContent=name==='gain'||name==='speed'?value.toFixed(1)+'×':Math.round(value*100)+'%'}
  $('fps').value=fps;$('volume').value=audio.volume;syncDuoControls();
 }
 function applyPreferences(value){
- const p=normalizePreferences(value);tronMode=p.tronMode;tronColor=p.tronColor;gain=p.gain;speed=p.speed;glow=p.glow;detail=p.detail;fps=p.fps;audio.volume=p.volume;paused=p.paused;favorites=new Set(p.favorites);
+ const p=normalizePreferences(value);audioReactive=p.audioReactive;tronMode=p.tronMode;tronColor=p.tronColor;gain=p.gain;speed=p.speed;glow=p.glow;detail=p.detail;fps=p.fps;audio.volume=p.volume;paused=p.paused;favorites=new Set(p.favorites);
  pickStyle(p.style);pickPalette(p.palette);syncControls();lastDraw=null;requestThumbnails();updatePlay();
 }
 function loadPreferences(){
@@ -290,7 +333,7 @@ function savePreferences(){++preferenceImportId;
 }
 function restorePreferences(){++preferenceImportId;if(savedPreferences){applyPreferences(savedPreferences);preferenceStatus('Restored saved preferences.')}else preferenceStatus('No saved preferences available.')}
 function resetPreferences(){++preferenceImportId;applyPreferences({version:1});preferenceStatus('Defaults restored. Your saved preferences are unchanged.')}
-function forgetPreferences(){++preferenceImportId;try{localStorage.removeItem(preferenceKey);localStorage.removeItem('afterglow.tron');savedPreferences=null;preferenceStatus('Saved preferences removed. Current settings and music are unchanged.')}catch(error){preferenceStatus('This browser blocked access to its local preferences.')}}
+function forgetPreferences(){++preferenceImportId;try{localStorage.removeItem(preferenceKey);localStorage.removeItem('afterglow.tron');localStorage.removeItem('afterglow.audioReactive');savedPreferences=null;preferenceStatus('Saved preferences removed. Current settings and music are unchanged.')}catch(error){preferenceStatus('This browser blocked access to its local preferences.')}}
 function exportPreferences(){
  try{const blob=new Blob([JSON.stringify(currentPreferences(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='Afterglow-preferences.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);preferenceStatus('Exported a local preference backup.')}
  catch(error){preferenceStatus('Could not export preferences: '+error.message)}
@@ -306,7 +349,7 @@ $('save-preferences').onclick=savePreferences;$('restore-preferences').onclick=r
 $('export-preferences').onclick=exportPreferences;$('import-preferences').onclick=()=>$('preference-file').click();$('preference-file').onchange=importPreferences;
 
 // Control and playback transitions are serialized by a generation token.
-let requestId=0,playPending=false;
+let requestId=0,playPending=false,connectingInput=false,micSink=null;
 const sourceLinks={spotify:['Spotify','https://open.spotify.com/'],apple:['Apple Music','https://music.apple.com/'],other:['YouTube Music','https://music.youtube.com/']};
 function ensureAudio(){
  if(!audioContext){
@@ -321,8 +364,9 @@ function ensureAudio(){
 function clearSignal(){bands.fill(0);wave.fill(0);rms=0}
 function stopMic(){
  const stream=activeMic;activeMic=null;
+ if(micSink){micSink.disconnect();micSink=null}
  if(micNode){micNode.disconnect();micNode=null}
- if(stream)stream.getTracks().forEach(track=>track.stop());
+ if(stream)stream.getTracks().forEach(track=>{track.onended=null;track.stop()});
  if(analyzer&&audioContext){analyzer.disconnect();analyzer.connect(audioContext.destination)}
 }
 function setSource(next){
@@ -333,32 +377,38 @@ function setSource(next){
 function updatePlay(){
  requestRender();
  const running=source==='local'?!audio.paused:source==='mic'?!!activeMic:!motionStopped();
- $('play').textContent=running?'Ⅱ':'▶';$('play').setAttribute('aria-label',source==='mic'?(running?'Stop listening':'Start listening'):(running?'Pause':'Play'));
+ $('play').textContent=running?'Ⅱ':'▶';$('play').setAttribute('aria-label',source==='mic'?(connectingInput?'Cancel microphone connection':running?'Stop microphone':'Start microphone'):(running?'Pause':'Play'));
  $('play').disabled=playPending||(!['local','mic'].includes(source)&&reducedMotion);
  $('pause-motion').textContent=reducedMotion?'System Reduce Motion is on':paused?'Resume visual motion':'Pause visual motion';
  $('pause-motion').disabled=reducedMotion;
- const measured=source==='local'||source==='mic';
- $('mode').textContent=measured?(running?'LIVE AUDIO':'AUDIO IDLE'):'AMBIENT MOTION';
+ $('audio-reactive').checked=audioReactive;
+ $('response-note').textContent=audioReactive?'Measured response with a supported input':'Independent animation • playback continues';
+ const measured=audioReactive&&(source==='local'||source==='mic');
+ $('mode').textContent=!audioReactive?'INDEPENDENT MOTION':connectingInput&&source==='mic'?'CONNECTING INPUT':measured?(running?'LIVE AUDIO':'AUDIO IDLE'):'AMBIENT MOTION';
  const seekable=source==='local'&&Number.isFinite(audio.duration)&&audio.duration>0;
+ $('volume').disabled=source!=='local';
  $('restart').disabled=!seekable;$('seek').disabled=!seekable;
 }
 function ambientMetadata(){ $('track-title').textContent='Make room for the music.';$('track-detail').textContent='Choose a source. Find your visual.' }
 async function selectSource(next){
- if(next==='local'){++requestId;playPending=false;$('file').click();updatePlay();return}
+ if(next==='local'){++requestId;connectingInput=false;playPending=false;$('file').click();updatePlay();return}
  if(next==='system'){toast('System audio capture is available in the native Mac app. Import a file or use microphone input in this preview.');return}
  if(!['ambient','mic',...Object.keys(sourceLinks)].includes(next))return;
- const token=++requestId;playPending=false;audio.pause();stopMic();clearSignal();setSource(next);
+ const token=++requestId;playPending=false;connectingInput=false;audio.pause();stopMic();clearSignal();setSource(next);
  if(next==='mic'){
+  connectingInput=true;updatePlay();
   $('track-title').textContent='The sound around you';$('track-detail').textContent='Microphone input • waiting for permission';
   try{
    await ensureAudio();if(token!==requestId)return;
    if(!navigator.mediaDevices?.getUserMedia)throw new Error('Microphone access is unavailable here. Try localhost or HTTPS, or import an audio file.');
    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
    if(token!==requestId){stream.getTracks().forEach(track=>track.stop());return}
-   activeMic=stream;analyzer.disconnect();micNode=audioContext.createMediaStreamSource(stream);micNode.connect(analyzer);
+   activeMic=stream;analyzer.disconnect();
+   micSink=audioContext.createGain();micSink.gain.value=0;analyzer.connect(micSink);micSink.connect(audioContext.destination);
+   micNode=audioContext.createMediaStreamSource(stream);micNode.connect(analyzer);
    stream.getTracks().forEach(track=>track.onended=()=>{if(activeMic===stream){stopMic();clearSignal();updatePlay();toast('Microphone input ended. Choose Start listening to reconnect.')}});
-   $('track-detail').textContent='Live input • no recording saved';updatePlay();
-  }catch(error){if(token!==requestId)return;stopMic();setSource('ambient');ambientMetadata();toast(error.message)}
+   connectingInput=false;$('track-detail').textContent='Live input • no recording saved';updatePlay();
+  }catch(error){if(token!==requestId)return;connectingInput=false;stopMic();clearSignal();updatePlay();toast(error.message)}
   return;
  }
  if(sourceLinks[next]){
@@ -371,7 +421,7 @@ async function selectSource(next){
 }
 async function importAudioFile(event){
  const file=event.target.files[0];if(!file)return;
- const token=++requestId;playPending=true;stopMic();audio.pause();clearSignal();updatePlay();
+ const token=++requestId;connectingInput=false;playPending=true;stopMic();audio.pause();clearSignal();updatePlay();
  try{
   await ensureAudio();if(token!==requestId)return;
   const previous=objectURL;objectURL=URL.createObjectURL(file);audio.src=objectURL;if(previous)URL.revokeObjectURL(previous);
@@ -388,7 +438,7 @@ async function togglePlayback(){
   catch(error){if(token===requestId)toast(error.message)}
   finally{if(token===requestId){playPending=false;updatePlay()}}
  }else if(source==='mic'){
-  if(activeMic){++requestId;stopMic();clearSignal();updatePlay()}else await selectSource('mic');
+  if(activeMic||connectingInput){++requestId;connectingInput=false;stopMic();clearSignal();updatePlay()}else await selectSource('mic');
  }else{paused=!paused;updatePlay()}
 }
 document.querySelectorAll('[data-source]').forEach(el=>el.onclick=()=>selectSource(el.dataset.source));
@@ -413,6 +463,14 @@ document.addEventListener('keydown',event=>{if(event.key==='Escape'){document.bo
 $('settings-button').onclick=()=>{document.body.classList.remove('settings-hidden');const panel=document.querySelector('.inspector');if(innerWidth<=1200){const open=panel.classList.toggle('mobile-open');$('settings-button').setAttribute('aria-expanded',open)}else panel.scrollIntoView({behavior:reducedMotion?'auto':'smooth'})};
 $('close-settings').onclick=closeSettings;
 
+
+$('audio-reactive').onchange=event=>{audioReactive=event.target.checked;clearSignal();updatePlay()};
+const gallery=$('gallery'),galleryScroll=$('gallery-scroll');
+function syncGalleryScroll(){const extent=Math.max(0,gallery.scrollWidth-gallery.clientWidth);galleryScroll.disabled=extent===0;galleryScroll.value=extent?100*gallery.scrollLeft/extent:0}
+galleryScroll.oninput=()=>{gallery.scrollLeft=Number(galleryScroll.value)/100*Math.max(0,gallery.scrollWidth-gallery.clientWidth)};
+gallery.onscroll=syncGalleryScroll;
+new ResizeObserver(syncGalleryScroll).observe(gallery);syncGalleryScroll();
+
 const observer=new ResizeObserver(()=>{const c=$('visual'),r=c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1,Math.sqrt(3000000/Math.max(1,r.width*r.height))),width=Math.max(1,Math.round(r.width*d)),height=Math.max(1,Math.round(r.height*d));if(c.width!==width||c.height!==height){c.width=width;c.height=height;requestRender()}});observer.observe($('visual'));
 function tick(ms){
  animationRequest=null;
@@ -424,13 +482,13 @@ function tick(ms){
  const delta=last?Math.min(.05,(ms-last)/1000):0;last=ms;
  lastDraw=lastDraw===null||needsRedraw?ms:lastDraw+Math.max(1,Math.floor((ms-lastDraw+.5)/interval))*interval;
  if(!motionStopped())time+=delta*speed;
- const live=analyzer&&((source==='local'&&!audio.paused&&!audio.ended)||(source==='mic'&&activeMic));
+ const live=audioReactive&&analyzer&&((source==='local'&&!audio.paused&&!audio.ended)||(source==='mic'&&activeMic));
  if(live){
   analyzer.getFloatFrequencyData(rawFrequency);analyzer.getFloatTimeDomainData(rawWave);
   let energy=0;for(const v of rawWave)energy+=v*v;rms=Math.sqrt(energy/rawWave.length);
   for(let i=0;i<64;i++){let peak=-100;for(let j=bandStarts[i];j<=bandEnds[i];j++)peak=Math.max(peak,rawFrequency[j]);bands[i]=Math.max(0,Math.min(1,(peak+80)/70))}
   for(let i=0;i<256;i++)wave[i]=rawWave[i*8];
- }else if(source==='local'||source==='mic'){clearSignal()}else{ambient(time,bands,wave,style==='waveform');rms=.12}
+ }else if(audioReactive&&(source==='local'||source==='mic')){clearSignal()}else{ambient(time,bands,wave,style==='waveform');rms=.12}
  if(thumbnailsDirty){thumbnailsDirty=false;drawThumbnails()}
  render($('visual'),style,time,bands,wave);needsRedraw=false;
  if(!motionStopped()||live)animationRequest=requestAnimationFrame(tick);else{last=0;lastDraw=null}

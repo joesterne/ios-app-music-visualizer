@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct StudioView: View {
     @EnvironmentObject private var model: StudioModel
     @Environment(\.scenePhase) private var scenePhase
+    @State private var galleryPosition: VisualizerStyle? = .yosemite
     @StateObject private var visualClock = VisualizerClock()
     var body: some View {
         GeometryReader { geometry in
@@ -54,6 +55,8 @@ struct StudioView: View {
                             stageHeader
                             visualStage(height: wide ? max(270, min(530, size.height - 360)) : min(430, max(180, min(size.width * 0.76, size.height * 0.58))))
                             if model.settings.style == .tron { TronControls() }
+                            Toggle("React to audio", isOn: $model.settings.audioReactive)
+                            Text(model.modeDescription).font(.caption).foregroundStyle(StudioTheme.muted)
                             gallery
                         }
                         .padding(wide ? 28 : 20)
@@ -106,7 +109,7 @@ struct StudioView: View {
         ZStack {
             VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
                              analyzer: model.analyzer, playing: model.isPlaying,
-                             reactive: model.source.reactive, settings: model.settings, paused: model.motionPaused, clock: visualClock)
+                             reactive: model.visualsReactive, settings: model.settings, paused: model.motionPaused, clock: visualClock)
                 .equatable()
             VStack(alignment: .leading) {
                 HStack {
@@ -142,11 +145,18 @@ struct StudioView: View {
                 Spacer()
                 Text("\(VisualizerStyle.allCases.count) / CHOOSE YOUR MOOD").font(.system(size: 8, design: .monospaced)).tracking(1).foregroundStyle(StudioTheme.muted)
             }
-            ScrollView(.horizontal, showsIndicators: false) {
+            ScrollView(.horizontal, showsIndicators: true) {
                 HStack(spacing: 12) {
-                    ForEach(VisualizerStyle.allCases) { style in VisualizerCard(style: style) }
-                }.padding(.bottom, 3)
+                    ForEach(VisualizerStyle.allCases) { style in VisualizerCard(style: style).id(style) }
+                }.scrollTargetLayout().padding(.bottom, 8)
             }
+            .scrollPosition(id: $galleryPosition, anchor: .leading)
+            Slider(value: Binding(
+                get: { Double(VisualizerStyle.allCases.firstIndex(of: galleryPosition ?? .yosemite) ?? 0) },
+                set: { galleryPosition = VisualizerStyle.allCases[Int($0)] }
+            ), in: 0...Double(VisualizerStyle.allCases.count - 1), step: 1)
+            .accessibilityLabel("Scroll visualizers")
+            .accessibilityValue(galleryPosition?.title ?? "Yosemite")
         }
     }
 }
@@ -240,7 +250,7 @@ struct ImmersiveView: View {
         ZStack {
             VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
                              analyzer: model.analyzer, playing: model.isPlaying,
-                             reactive: model.source.reactive, settings: model.settings, paused: model.motionPaused, clock: clock)
+                             reactive: model.visualsReactive, settings: model.settings, paused: model.motionPaused, clock: clock)
                 .equatable()
                 .ignoresSafeArea().contentShape(Rectangle()).onTapGesture { showControls.toggle() }
             if showControls {
