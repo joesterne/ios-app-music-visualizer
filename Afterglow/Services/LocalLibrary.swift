@@ -48,5 +48,10 @@ enum LocalLibrary {
             }
         }.value
     }
-    static func remove(_ track: LocalTrack) throws { try FileManager.default.removeItem(at: track.url) }
+    static func remove(_ track: LocalTrack) throws {
+        // A copy that is already gone (for example, cleared from Application Support)
+        // must still leave the library instead of making the entry impossible to remove.
+        guard FileManager.default.fileExists(atPath: track.url.path) else { return }
+        try FileManager.default.removeItem(at: track.url)
+    }
 }

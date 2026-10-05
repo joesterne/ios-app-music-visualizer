@@ -151,8 +151,9 @@ function renderFallout(canvas,t,b,small=false){
  const wash=ctx.createRadialGradient(W*.5,H*.35,0,W*.5,H*.35,Math.max(W,H)*.7);wash.addColorStop(0,'#3d5145');wash.addColorStop(1,'#091312');ctx.fillStyle=wash;ctx.fillRect(0,0,W,H);
  for(let i=0;i<9;i++){const x=W*i/8;line(x,0,x,floor,'#71817328',2);for(const y of [H*.13,H*.5]){ring(x+6,y,2,'#88917c66')}}
  line(0,H*.14,W,H*.14,'#a49d7150',3);line(0,H*.155,W,H*.155,'#080e0d',5);
- text('VAULT-TEC  /  SUBLEVEL 101',W*.07,H*.075,Math.max(6,D*.018),amber);
- text('REACTOR ONLINE',W*.93,H*.075,Math.max(6,D*.016),green,'right');
+ // Wall labels sit below the rail, clear of the stage's top overlay (mode badge and favorite).
+ text('VAULT-TEC  /  SUBLEVEL 101',W*.035,H*.205,Math.max(6,D*.018),amber);
+ text('REACTOR ONLINE',W*.965,H*.205,Math.max(6,D*.016),green,'right');
  // Far door rolls on the same rail, with its own phase and radius.
  function door(x,radius,label,opacity){
   const y=floor-radius;ctx.save();ctx.globalAlpha=opacity;ctx.translate(x,y);ctx.rotate(x/radius);
@@ -372,7 +373,7 @@ async function selectSource(next){
    activeMic=stream;analyzer.disconnect();
    micSink=audioContext.createGain();micSink.gain.value=0;analyzer.connect(micSink);micSink.connect(audioContext.destination);
    micNode=audioContext.createMediaStreamSource(stream);micNode.connect(analyzer);
-   stream.getTracks().forEach(track=>track.onended=()=>{if(activeMic===stream){stopMic();clearSignal();updatePlay();toast('Microphone input ended. Choose Start listening to reconnect.')}});
+   stream.getTracks().forEach(track=>track.onended=()=>{if(activeMic===stream){stopMic();clearSignal();updatePlay();toast('Microphone input ended. Press play to reconnect.')}});
    connectingInput=false;$('track-detail').textContent='Live input • no recording saved';updatePlay();
   }catch(error){if(token!==requestId)return;connectingInput=false;stopMic();clearSignal();updatePlay();toast(error.message)}
   return;
@@ -425,7 +426,8 @@ $('favorite').onclick=()=>{favorites.has(style)?favorites.delete(style):favorite
 $('pause-motion').onclick=()=>{paused=!paused;updatePlay()};
 $('expand').onclick=()=>{const enabled=document.body.classList.toggle('immersive');$('expand').setAttribute('aria-pressed',enabled);requestRender()};
 function closeSettings(){if(innerWidth>1200)document.body.classList.add('settings-hidden');const panel=document.querySelector('.inspector');panel.classList.remove('mobile-open');panel.style.removeProperty('display');document.querySelector('.shell').style.removeProperty('grid-template-columns');$('settings-button').setAttribute('aria-expanded','false')}
-document.addEventListener('keydown',event=>{if(event.key==='Escape'){document.body.classList.remove('immersive');$('expand').setAttribute('aria-pressed','false');closeSettings();requestRender()}});
+// Escape closes the topmost layer only: leaving immersive mode must not also collapse the desktop inspector.
+document.addEventListener('keydown',event=>{if(event.key!=='Escape')return;if(document.body.classList.contains('immersive')){document.body.classList.remove('immersive');$('expand').setAttribute('aria-pressed','false');requestRender()}else closeSettings()});
 $('settings-button').onclick=()=>{document.body.classList.remove('settings-hidden');const panel=document.querySelector('.inspector');if(innerWidth<=1200){const open=panel.classList.toggle('mobile-open');$('settings-button').setAttribute('aria-expanded',open)}else panel.scrollIntoView({behavior:reducedMotion?'auto':'smooth'})};
 $('close-settings').onclick=closeSettings;
 

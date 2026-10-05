@@ -154,8 +154,9 @@ enum VisualRenderer {
         }
         line(&c,0,h*0.14,w,h*0.14,amber.opacity(0.3),3)
         line(&c,0,h*0.155,w,h*0.155,Color(hex: 0x080E0D),5)
-        label(&c,"VAULT-TEC / SUBLEVEL 101",w*0.07,h*0.075,max(6,unit*0.018),amber)
-        label(&c,"REACTOR ONLINE",w*0.93,h*0.075,max(6,unit*0.016),green,.trailing)
+        // Wall labels sit below the rail, clear of the stage's top overlay (mode badge and favorite).
+        label(&c,"VAULT-TEC / SUBLEVEL 101",w*0.035,h*0.205,max(6,unit*0.018),amber)
+        label(&c,"REACTOR ONLINE",w*0.965,h*0.205,max(6,unit*0.016),green,.trailing)
         func door(_ x: Double, _ r: Double, _ number: String, _ opacity: Double) {
             var g = c; g.opacity = opacity
             g.translateBy(x: x,y: floor-r); g.rotate(by: .radians(x/r))
