@@ -26,8 +26,8 @@ struct StudioView: View {
             .alert("Afterglow", isPresented: Binding(get: { model.error != nil && !model.showSources }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
-            .onChange(of: scenePhase) { _, phase in Task { await model.setActive(phase == .active) } }
-            .onChange(of: model.immersive) { _, _ in Task { await model.setActive(scenePhase == .active) } }
+            .onChange(of: scenePhase) { _, phase in Task { await model.updateScenePhase(phase) } }
+            .onChange(of: model.immersive) { _, _ in Task { await model.updateScenePhase(scenePhase) } }
         }
     }
     @ViewBuilder private func workspace(size: CGSize, wide: Bool) -> some View {
@@ -153,7 +153,8 @@ struct StudioView: View {
             .scrollPosition(id: $galleryPosition, anchor: .leading)
             Slider(value: Binding(
                 get: { Double(VisualizerStyle.allCases.firstIndex(of: galleryPosition ?? .yosemite) ?? 0) },
-                set: { galleryPosition = VisualizerStyle.allCases[Int($0)] }
+                // Round rather than truncate: a stepped value such as 2.9999… must select index 3.
+                set: { galleryPosition = VisualizerStyle.allCases[min(VisualizerStyle.allCases.count - 1, max(0, Int($0.rounded())))] }
             ), in: 0...Double(VisualizerStyle.allCases.count - 1), step: 1)
             .accessibilityLabel("Scroll visualizers")
             .accessibilityValue(galleryPosition?.title ?? "Yosemite")

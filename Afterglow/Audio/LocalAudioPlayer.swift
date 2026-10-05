@@ -8,13 +8,19 @@ final class LocalAudioPlayer {
     private var file: AVAudioFile?
     private var startFrame: AVAudioFramePosition = 0
     private var generation = UUID()
+    /// Frame captured at pause. `playerTime(forNodeTime:)` returns nil while the player is
+    /// paused, which would otherwise snap the reported position back to the segment start.
+    private var pausedFrame: AVAudioFramePosition?
     private(set) var isPlaying = false
     var onFinished: (() -> Void)?
     var duration: Double { file.map { Double($0.length) / $0.processingFormat.sampleRate } ?? 0 }
+    private var renderedFrames: AVAudioFramePosition {
+        max(0, player.lastRenderTime.flatMap { player.playerTime(forNodeTime: $0) }?.sampleTime ?? 0)
+    }
     var position: Double {
         guard let file else { return 0 }
-        let elapsed = player.lastRenderTime.flatMap { player.playerTime(forNodeTime: $0) }?.sampleTime ?? 0
-        return min(duration, Double(startFrame + max(0, elapsed)) / file.processingFormat.sampleRate)
+        let frame = pausedFrame ?? (startFrame + renderedFrames)
+        return min(duration, Double(frame) / file.processingFormat.sampleRate)
     }
     var volume: Float = 0.8 { didSet { player.volume = volume } }
 
@@ -49,14 +55,14 @@ final class LocalAudioPlayer {
         // A stopped engine/player needs a new schedule; a paused player retains its schedule.
         if !hasSchedule { schedule(from: startFrame) }
         player.play()
-        isPlaying = true
+        isPlaying = true; pausedFrame = nil
     }
     private var hasSchedule = false
     private func schedule(from frame: AVAudioFramePosition) {
         guard let file else { return }
         generation = UUID()
         let token = generation
-        player.stop()
+        player.stop(); pausedFrame = nil
         startFrame = min(max(0, frame), max(0, file.length - 1))
         // AVAudioFrameCount is UInt32; very long files are played as successive segments.
         let count = AVAudioFrameCount(min(file.length - startFrame, Int64(UInt32.max)))
@@ -77,7 +83,10 @@ final class LocalAudioPlayer {
         }
         hasSchedule = true
     }
-    func pause() { player.pause(); isPlaying = false }
+    func pause() {
+        if isPlaying { pausedFrame = startFrame + renderedFrames }
+        player.pause(); isPlaying = false
+    }
     func seek(to seconds: Double) throws {
         guard let file, seconds.isFinite else { return }
         let wasPlaying = isPlaying
@@ -85,7 +94,7 @@ final class LocalAudioPlayer {
         if wasPlaying { player.play() }
     }
     func stop() {
-        generation = UUID(); isPlaying = false; hasSchedule = false
+        generation = UUID(); isPlaying = false; hasSchedule = false; pausedFrame = nil
         player.stop(); engine.stop(); startFrame = 0
     }
     func clear() { stop(); file = nil }

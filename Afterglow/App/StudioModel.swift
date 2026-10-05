@@ -35,6 +35,7 @@ final class StudioModel: ObservableObject {
     private var ticker: AnyCancellable?
     private var lifecycleObservers: [NSObjectProtocol] = []
     private var active = true
+    private var awaitingCapturePermission = false
     private var sourceRevision = 0
 
     init() {
@@ -95,7 +96,7 @@ final class StudioModel: ObservableObject {
         source = next; isPlaying = false; position = 0; duration = 0
             switch next {
             case .microphone:
-                try await microphone.start(); isPlaying = true
+                try await startMicrophone(); isPlaying = true
             case .systemAudio:
                 #if os(macOS)
                 try await system.start(); isPlaying = true
@@ -188,7 +189,7 @@ final class StudioModel: ObservableObject {
                     #endif
                     isPlaying = false; analyzer.reset()
                 } else {
-                    if source == .microphone { try await microphone.start() }
+                    if source == .microphone { try await startMicrophone() }
                     else {
                         #if os(macOS)
                         try await system.start()
@@ -226,6 +227,18 @@ final class StudioModel: ObservableObject {
             if source == .local { try local.seek(to: seconds) }
             else if source == .appleMusic { apple.seek(to: seconds) }
         } catch { self.error = error.localizedDescription }
+    }
+    /// iOS also reports `.inactive` while its own microphone permission alert is on screen.
+    /// That alert is part of the request the person just made, so it must not cancel the
+    /// capture they are granting. Leaving the app (`.background`) still stops capture.
+    func updateScenePhase(_ phase: ScenePhase) async {
+        if phase == .inactive && awaitingCapturePermission { return }
+        await setActive(phase == .active)
+    }
+    private func startMicrophone() async throws {
+        awaitingCapturePermission = true
+        defer { awaitingCapturePermission = false }
+        try await microphone.start()
     }
     func setActive(_ value: Bool) async {
         active = value
