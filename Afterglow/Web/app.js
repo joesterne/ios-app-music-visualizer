@@ -1,7 +1,7 @@
 
 "use strict";
 const $=id=>document.getElementById(id);
-const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.'],['fallout','Fallout','Vault doors. Green phosphor. Wasteland radio.']];
+const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.'],['fallout','Fallout','Vault doors. Green phosphor. Wasteland radio.'],['forestWalk','Forest Walk','Follow the trail. Discover the wildlife.']];
 const palettes={Ultraviolet:['#91a1ff','#cb79ff','#f3b0e6'],Glacier:['#55dcd9','#68b2ff','#c6fff2'],Ember:['#ff9760','#f25d86','#ffe0a3'],Candy:['#ff80c7','#868bff','#57eee0'],Monochrome:['#d1d7e6','#ffffff','#737f99']};
 const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reducedMotion=motionPreference.matches;
 function motionStopped(){return paused||reducedMotion}
@@ -236,7 +236,16 @@ function renderMario(canvas,t,b){
  marioSprite.forEach((line,row)=>{[...line].forEach((pixel,column)=>{if(colors[pixel])box(heroX+(column-6)*2+(row>12&&jump===0?step*(column<6?-1:1):0),188-jump-32+row*2,2,2,colors[pixel])})});
 }
 
-function render(canvas,kind,t,b,w,small=false){if(kind==='fallout'){renderFallout(canvas,t,b,small);return}if(kind==='spaceFlight'){renderSpace(canvas,t,b,small);return}if(kind==='superMario'){renderMario(canvas,t,b);return}if(kind==='tron'){renderTron(canvas,t,b,small);return;}if(kind==='yosemite'){renderYosemite(canvas,t,small);return}const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
+// Scene renderers share a single dispatch point; signal-based styles continue below.
+const sceneRenderers=Object.freeze({
+ forestWalk:renderForestWalk, fallout:renderFallout, spaceFlight:renderSpace,
+ superMario:renderMario, tron:renderTron,
+ yosemite:(canvas,time,bands,small)=>renderYosemite(canvas,time,small)
+});
+function render(canvas,kind,t,b,w,small=false){
+ const scene=sceneRenderers[kind];
+ if(scene){scene(canvas,t,b,small);return}
+ const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
 if(kind==='ironMan'){
  const cx=W*.5,cy=H*.46,radius=D*.29,red='#ff493b',gold='#ffd080',cyan='#75e8ff',energy=small?.35:Math.min(1,Math.max(0,rms*gain*3));
  const point=(a,r)=>[cx+Math.cos(a)*r,cy+Math.sin(a)*r];

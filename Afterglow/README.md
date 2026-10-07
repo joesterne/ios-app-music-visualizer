@@ -1,9 +1,13 @@
 # Afterglow
 
-A native music-visualizer studio for **iPhone, iPad, and Mac**, with fifteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
+A native music-visualizer studio for **iPhone, iPad, and Mac**, with sixteen visualizers, five original palettes, three Tron colors, and clear source-mode labels.
 
 This package contains a complete editable Xcode project and an interactive browser preview. **It is source code, not a signed `.ipa` or `.app`.** The native app must be built in Xcode on a Mac. Local unsigned Mac and iOS Simulator Debug builds succeeded with Xcode 27 on September 24, 2026. The latest native response-toggle and gallery changes still need runtime verification; see the [current validation status](#validation-status) below.
 
+
+## Forest Walk
+
+Choose **Forest Walk** for a backpacked walker following a woodland trail, with layered moving trees and occasional deer, foxes, rabbits, and birds. Sunbeams and fireflies respond to supported audio; the existing pause, speed, Reduce Motion, palette, detail, favorites, and saved-preference controls apply. See [Forest Walk behavior and validation](Docs/Forest-Walk.md).
 
 ## Tron theme
 
@@ -54,7 +58,7 @@ python3 -m http.server 8765 --bind 127.0.0.1
 
 Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop it. If the port is occupied, use `8766` in both the command and URL. From the repository root, append `--directory Afterglow` to the command.
 
-Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. Use Save preferences locally to retain this choice after reload. The horizontal control below the gallery browses all fifteen styles. Escape leaves immersive mode.
+Choose a visualizer or click **Import audio / +** to play an unprotected local audio file. Use **React to audio** beneath the stage to choose measured response or independent animation; playback continues when changing this setting. Use Save preferences locally to retain this choice after reload. The horizontal control below the gallery browses all sixteen styles. Escape leaves immersive mode.
 
 No music account, backend, API key, or package installation is required. Python is only used to serve the preview; opening `Preview.html` directly also supports ambient visuals, but localhost is recommended for browser audio permissions. Audio files and microphone samples are processed locally.
 
@@ -113,7 +117,7 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 
 ## Visual response and gallery browsing
 
-Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. Use Save preferences locally to retain the preference. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all fifteen visualizers.
+Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. Use Save preferences locally to retain the preference. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all sixteen visualizers.
 
 Rendering reuses cached Halo depth orders and browser frequency-bin ranges. The browser skips visual analysis and rendering while hidden or uses ambient animation when independent; native independent mode avoids publishing analyzer frames unless the source meters are visible. These are reductions in repeated work; no device-specific frame-rate improvement has been measured.
 

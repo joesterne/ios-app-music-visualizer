@@ -45,7 +45,7 @@ Run after a successful Xcode build. These checks were **not** executed on an App
 
 ## Visuals and power
 
-- Open each of fifteen styles, all five palettes, min/max sensitivity, speed, glow, and detail.
+- Open each of sixteen styles, all five palettes, min/max sensitivity, speed, glow, and detail.
 - In Fallout, check both rolling doors and wrist terminals in landscape, portrait, thumbnail, classic, Duo, and immersive views. Pause or enable Reduce Motion while audio is active: code and doors should freeze while CRT traces and brightness respond. Save/restore the selection and favorite.
 - In Super Mario and Space Flight, verify animation, pause, Reduce Motion, audio response, favorites, and saved selection in classic, Duo, and immersive layouts. Toggle response during local playback and confirm playback continues.
 - In Yosemite, verify sky masking against the cliff edges, landscape/portrait crops, animated clouds and mist, bird motion, light response to local audio, and asset loading on both targets. Check that the landscape stays still when pausing or enabling Reduce Motion.
