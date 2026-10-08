@@ -20,6 +20,8 @@ Start with **Ambient studio**, or click **Import audio / +** and select an unpro
 
 Yosemite scenery, adaptive Duo layouts, and explicit local preference Save/Restore/Reset/Forget are included alongside Super Mario and Space Flight. Open `Afterglow/Duo-Demo.html` for the interactive demo.
 
+For the new **iPhone Duo**, the native workspace adapts between compact outer-screen controls and an expanded scene/control deck using the system arrangement layout. Playback settings and the animation clock are shared across layout changes. Build with **Xcode 27.1 or newer**; see the [Duo setup and validation notes](Afterglow/Docs/iPhone-Duo.md). With the local server running, visit **http://127.0.0.1:8765/Duo-Demo.html** to try the illustrative closed, open, and tabletop layouts. Native fold transitions still require simulator or device validation.
+
 The preview runs locally without an account, backend, or API key. Audio is not uploaded. It does not provide native MusicKit playback or Mac system-audio capture.
 
 ### Native Mac app

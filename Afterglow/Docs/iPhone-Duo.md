@@ -41,7 +41,11 @@ Rebuild the interactive wrapper with `python3 Scripts/build-duo-demo.py` after e
 
 Executed in Linux: Swift syntax parsing, JavaScript syntax checks, shared preview scheduler tests, pose/message continuity tests, demo tour and iframe-lifetime tests, actual Canvas-renderer frame checks, project/resource and asset integrity checks, and MP4 stream/duration validation. Representative closed, open, tabletop, and alternate-visual video frames were inspected.
 
-Not executed: Apple-SDK Swift type checking, Xcode compilation, simulator pose testing, native UI rendering, physical Duo testing, browser DOM/layout QA, or device performance profiling. The source is prepared for an Apple build-and-test pass; support has not been certified on hardware. No additional simultaneous-display or independent multiwindow playback feature is claimed.
+Local integration checked October 7, 2026: the complete portable suite passed, including 111 DOM interaction assertions, all 15 visualizer selections, audio-control regressions, Duo pose continuity, persistent iframe lifetime, and Canvas renderer checks. Native style/geometry, preference, and shared-clock regression checks passed with the Apple compiler. An unsigned Mac Debug build succeeded with Xcode 27.0. The preview and Duo demo were regenerated from their editable sources, and the Xcode project was regenerated.
+
+Native build verification on October 8, 2026: Xcode 27.1 RC (27A9275) is installed at `/Applications/Xcode-27.1.app`, with the iOS 27.1 SDK. Running `DEVELOPER_DIR=/Applications/Xcode-27.1.app/Contents/Developer bash Afterglow/Scripts/build-apple.sh` from the repository root passed the DSP, native style/geometry, preferences, and animation-clock checks, followed by successful unsigned Mac and iOS Simulator Debug builds. The iOS build compiles the Duo workspace and its arrangement API.
+
+Simulator launch and pose testing remain unverified; the separate iOS 27.1 simulator runtime download was still in progress after these builds. Physical Duo testing, native UI rendering, live audio capture, visual browser layout QA, and device performance profiling were not completed in this pass. The in-app browser was unavailable for visual inspection. Support has not been certified on hardware. No additional simultaneous-display or independent multiwindow playback feature is claimed.
 
 ## Apple references checked September 25, 2026
 

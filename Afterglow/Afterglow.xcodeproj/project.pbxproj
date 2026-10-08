@@ -295,6 +295,12 @@
 			"path" = "test-duo-demo.cjs";
 			"sourceTree" = "<group>";
 		};
+		"5419C4B5956B8E1945377D58" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text";
+			"path" = "test-fallout-rendering.cjs";
+			"sourceTree" = "<group>";
+		};
 		"A7F6792D3FD8F3939D747827" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -319,6 +325,12 @@
 			"path" = "test_dsp.c";
 			"sourceTree" = "<group>";
 		};
+		"73AFC4C693E3B97F02164520" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text";
+			"path" = "test_preview.cjs";
+			"sourceTree" = "<group>";
+		};
 		"C336E8C0CC3E7690FB478CC6" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -332,10 +344,12 @@
 				"847367C1E37C32B07C658AE4",
 				"B486E5C717219C0A46664BF1",
 				"79D9D16E60EEC04F463EE4DB",
+				"5419C4B5956B8E1945377D58",
 				"A7F6792D3FD8F3939D747827",
 				"CCABE1CF204FBAF30EC4428D",
 				"DF2A0BE366DAC65897FA5CC8",
 				"7F41AFBEEC0C473DC5118647",
+				"73AFC4C693E3B97F02164520",
 				"C336E8C0CC3E7690FB478CC6",
 			);
 			"path" = "Tests";
@@ -443,10 +457,28 @@
 			"path" = "Device-Checklist.md";
 			"sourceTree" = "<group>";
 		};
+		"C89EBC00104465605C5E103F" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "net.daringfireball.markdown";
+			"path" = "Fallout.md";
+			"sourceTree" = "<group>";
+		};
+		"07D388F7A1EF6A31D0EB307E" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "net.daringfireball.markdown";
+			"path" = "PR-Draft.md";
+			"sourceTree" = "<group>";
+		};
 		"BDCDD6386F4E13B8592639C7" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "net.daringfireball.markdown";
 			"path" = "Performance.md";
+			"sourceTree" = "<group>";
+		};
+		"5624B3485DEBE2C3851DFFE6" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "net.daringfireball.markdown";
+			"path" = "UI-Audio-Validation.md";
 			"sourceTree" = "<group>";
 		};
 		"F78D4DCBD0632449150ED0B4" = {
@@ -473,7 +505,10 @@
 				"DB002E57BD291792F652E40F",
 				"41748997A2E7D361562C7B8B",
 				"F3E0819278FDF815473E84E0",
+				"C89EBC00104465605C5E103F",
+				"07D388F7A1EF6A31D0EB307E",
 				"BDCDD6386F4E13B8592639C7",
+				"5624B3485DEBE2C3851DFFE6",
 				"F78D4DCBD0632449150ED0B4",
 				"6BCF339F16C6E23AE2F017FE",
 				"C2513AF9B7BA871EF4FC2EB5",
