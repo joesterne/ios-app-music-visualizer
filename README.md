@@ -1,6 +1,8 @@
 # Afterglow — Music Visualizer
 
-A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from fifteen visualizers, including Tron, Halo, and Iron Man.
+A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from sixteen visualizers, including Forest Walk, Tron, Halo, and Iron Man.
+
+**Forest Walk** adds a backpacked walker on a forest trail with randomly timed deer, fox, rabbit, and bird encounters. [Behavior, code organization, and validation](Afterglow/Docs/Forest-Walk.md).
 
 ## Run locally
 
@@ -14,7 +16,7 @@ python3 -m http.server 8765 --bind 127.0.0.1 --directory Afterglow
 
 Open **http://127.0.0.1:8765/Preview.html** in Safari or Chrome. Keep the terminal open; press **Ctrl+C** to stop the server. If port 8765 is already in use, try 8766 and use that port in the URL.
 
-Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all fifteen visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
+Start with **Ambient studio**, or click **Import audio / +** and select an unprotected audio file. Turn **React to audio** on for measured input or off for independent animation while playback continues. Use the horizontal control below the gallery to browse all sixteen visualizers. Microphone input requires browser permission; localhost provides the appropriate secure context, but browser support still varies.
 
 ## Yosemite, Duo, and local preferences
 
@@ -46,7 +48,7 @@ See the [full setup guide](Afterglow/README.md) for signing, music-source capabi
 - **Halo:** a glowing ringworld, stars, orbiting energy, and audio-responsive spires.
 - **Iron Man:** a white-blue arc reactor, rotating red/gold rings, and reactive HUD accents.
 - **React to audio:** saved preference for measured audio response or independent animation. Streaming companions use independent animation because they do not supply audio samples.
-- **Gallery scrolling:** visible horizontal control for all fifteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
+- **Gallery scrolling:** visible horizontal control for all sixteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
 
 The renderers reuse Halo depth orders and browser frequency ranges, skip hidden browser rendering/analysis, and reduce native frame publication during independent animation. No device-specific speedup has been benchmarked.
 
