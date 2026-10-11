@@ -27,20 +27,19 @@ struct StudioView: View {
             .alert("Afterglow", isPresented: Binding(get: { model.error != nil && !model.showSources }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
-            .onAppear { synchronizeClock() }
+            .onAppear { visualClock.apply(clockConfiguration) }
+            .onChange(of: clockConfiguration) { _, configuration in
+                visualClock.apply(configuration)
+            }
             .onChange(of: scenePhase) { _, phase in
-                synchronizeClock()
                 Task { await model.updateScenePhase(phase) }
             }
-            .onChange(of: reduceMotion) { _, _ in synchronizeClock() }
-            .onChange(of: model.motionPaused) { _, _ in synchronizeClock() }
-            .onChange(of: model.settings.speed) { _, _ in synchronizeClock() }
             .onChange(of: model.immersive) { _, _ in Task { await model.updateScenePhase(scenePhase) } }
         }
     }
-    private func synchronizeClock() {
-        visualClock.setSpeed(model.settings.speed)
-        visualClock.setPaused(model.motionPaused || reduceMotion || scenePhase != .active)
+    private var clockConfiguration: VisualizerClock.Configuration {
+        .init(speed: model.settings.speed,
+              paused: model.motionPaused || reduceMotion || scenePhase != .active)
     }
     @ViewBuilder private func workspace(size: CGSize, wide: Bool) -> some View {
         #if os(iOS)
