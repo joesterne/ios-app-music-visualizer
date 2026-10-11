@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 struct StudioView: View {
     @EnvironmentObject private var model: StudioModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var galleryPosition: VisualizerStyle? = .yosemite
     @StateObject private var visualClock = VisualizerClock()
     var body: some View {
@@ -26,9 +27,20 @@ struct StudioView: View {
             .alert("Afterglow", isPresented: Binding(get: { model.error != nil && !model.showSources }, set: { if !$0 { model.error = nil } })) {
                 Button("OK") { model.error = nil }
             } message: { Text(model.error ?? "") }
-            .onChange(of: scenePhase) { _, phase in Task { await model.updateScenePhase(phase) } }
+            .onAppear { synchronizeClock() }
+            .onChange(of: scenePhase) { _, phase in
+                synchronizeClock()
+                Task { await model.updateScenePhase(phase) }
+            }
+            .onChange(of: reduceMotion) { _, _ in synchronizeClock() }
+            .onChange(of: model.motionPaused) { _, _ in synchronizeClock() }
+            .onChange(of: model.settings.speed) { _, _ in synchronizeClock() }
             .onChange(of: model.immersive) { _, _ in Task { await model.updateScenePhase(scenePhase) } }
         }
+    }
+    private func synchronizeClock() {
+        visualClock.setSpeed(model.settings.speed)
+        visualClock.setPaused(model.motionPaused || reduceMotion || scenePhase != .active)
     }
     @ViewBuilder private func workspace(size: CGSize, wide: Bool) -> some View {
         #if os(iOS)
