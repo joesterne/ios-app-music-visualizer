@@ -126,7 +126,7 @@ final class MacOutputVolume: ObservableObject {
         if hasMasterVolume || channelVolumes.count <= 1 {
             nextVolumes = [requested]
         } else {
-            let current = average(channelVolumes)
+            let current = Float32(average(channelVolumes))
             // Scale each channel rather than assigning an identical value, retaining balance.
             let multiplier = current > 0 ? requested / current : requested
             nextVolumes = channelVolumes.map { min(1, max(0, $0 * multiplier)) }
