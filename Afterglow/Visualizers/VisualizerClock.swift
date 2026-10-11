@@ -29,4 +29,14 @@ final class VisualizerClock: ObservableObject {
         speed = nextSpeed
         paused = configuration.paused
     }
+
+    // Retained for deterministic native clock regressions and callers outside
+    // StudioView. The studio itself always uses one atomic configuration update.
+    func setPaused(_ value: Bool, at date: Date = Date()) {
+        apply(.init(speed: speed, paused: value), at: date)
+    }
+
+    func setSpeed(_ value: Double, at date: Date = Date()) {
+        apply(.init(speed: value, paused: paused), at: date)
+    }
 }
