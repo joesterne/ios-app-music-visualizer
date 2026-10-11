@@ -74,6 +74,8 @@ final class MacOutputVolume: ObservableObject {
 
     private var deviceID = kAudioObjectUnknown
     private var volumeAddresses: [AudioObjectPropertyAddress] = []
+    private var channelVolumes: [Float32] = []
+    private var hasMasterVolume = false
 
     func refresh() {
         var device = kAudioObjectUnknown
@@ -108,17 +110,31 @@ final class MacOutputVolume: ObservableObject {
 
         deviceID = device
         volumeAddresses = addresses
-        volume = Double(values.reduce(0, +) / Float32(values.count))
+        channelVolumes = values
+        hasMasterVolume = addresses.count == 1 &&
+            addresses[0].mElement == kAudioObjectPropertyElementMain
+        volume = average(values)
         isAvailable = true
         status = "Controls the current macOS output device."
     }
 
     func setVolume(_ newValue: Double) {
         guard isAvailable, deviceID != kAudioObjectUnknown, !volumeAddresses.isEmpty else { return }
-        let clamped = min(1, max(0, newValue.isFinite ? newValue : volume))
-        var scalar = Float32(clamped)
+        let requested = Float32(min(1, max(0, newValue.isFinite ? newValue : volume)))
+        let nextVolumes: [Float32]
 
-        for var address in volumeAddresses {
+        if hasMasterVolume || channelVolumes.count <= 1 {
+            nextVolumes = [requested]
+        } else {
+            let current = average(channelVolumes)
+            // Scale each channel rather than assigning an identical value, retaining balance.
+            let multiplier = current > 0 ? requested / current : requested
+            nextVolumes = channelVolumes.map { min(1, max(0, $0 * multiplier)) }
+        }
+
+        for (index, address) in volumeAddresses.enumerated() {
+            var address = address
+            var scalar = nextVolumes[index]
             let result = AudioObjectSetPropertyData(
                 deviceID, &address, 0, nil, UInt32(MemoryLayout<Float32>.size), &scalar
             )
@@ -127,31 +143,70 @@ final class MacOutputVolume: ObservableObject {
                 return
             }
         }
-        volume = clamped
+        channelVolumes = nextVolumes
+        volume = average(nextVolumes)
     }
 
     private func writableVolumeAddresses(for device: AudioDeviceID) -> [AudioObjectPropertyAddress] {
-        let elements: [AudioObjectPropertyElement] = [
-            kAudioObjectPropertyElementMain, 1, 2
-        ]
-        var addresses: [AudioObjectPropertyAddress] = []
+        let master = volumeAddress(for: kAudioObjectPropertyElementMain, device: device)
+        if isWritable(master, for: device) { return [master] }
 
-        for element in elements {
-            var address = AudioObjectPropertyAddress(
-                mSelector: kAudioDevicePropertyVolumeScalar,
-                mScope: kAudioDevicePropertyScopeOutput,
-                mElement: element
-            )
-            guard AudioObjectHasProperty(device, &address) else { continue }
-            var settable = DarwinBoolean(false)
-            guard AudioObjectIsPropertySettable(device, &address, &settable) == noErr,
-                  settable.boolValue else { continue }
-            addresses.append(address)
-
-            // A master control is authoritative; otherwise use the available channels.
-            if element == kAudioObjectPropertyElementMain { return [address] }
+        let channelCount = outputChannelCount(for: device)
+        guard channelCount > 0 else { return [] }
+        let addresses = (1...channelCount).compactMap {
+            let address = volumeAddress(for: AudioObjectPropertyElement($0), device: device)
+            return isWritable(address, for: device) ? address : nil
         }
-        return addresses
+
+        // Do not present a master-like slider unless every output channel is covered.
+        return addresses.count == channelCount ? addresses : []
+    }
+
+    private func volumeAddress(
+        for element: AudioObjectPropertyElement,
+        device: AudioDeviceID
+    ) -> AudioObjectPropertyAddress {
+        AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyVolumeScalar,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: element
+        )
+    }
+
+    private func isWritable(
+        _ address: AudioObjectPropertyAddress,
+        for device: AudioDeviceID
+    ) -> Bool {
+        var address = address
+        guard AudioObjectHasProperty(device, &address) else { return false }
+        var settable = DarwinBoolean(false)
+        return AudioObjectIsPropertySettable(device, &address, &settable) == noErr &&
+            settable.boolValue
+    }
+
+    private func outputChannelCount(for device: AudioDeviceID) -> Int {
+        var address = AudioObjectPropertyAddress(
+            mSelector: kAudioDevicePropertyStreamConfiguration,
+            mScope: kAudioDevicePropertyScopeOutput,
+            mElement: kAudioObjectPropertyElementMain
+        )
+        var size: UInt32 = 0
+        guard AudioObjectGetPropertyDataSize(device, &address, 0, nil, &size) == noErr,
+              size > 0 else { return 0 }
+
+        let raw = UnsafeMutableRawPointer.allocate(
+            byteCount: max(Int(size), MemoryLayout<AudioBufferList>.size),
+            alignment: MemoryLayout<AudioBufferList>.alignment
+        )
+        defer { raw.deallocate() }
+
+        guard AudioObjectGetPropertyData(device, &address, 0, nil, &size, raw) == noErr else {
+            return 0
+        }
+        let list = raw.bindMemory(to: AudioBufferList.self, capacity: 1)
+        return UnsafeMutableAudioBufferListPointer(list).reduce(0) {
+            $0 + Int($1.mNumberChannels)
+        }
     }
 
     private func scalarVolume(
@@ -166,9 +221,16 @@ final class MacOutputVolume: ObservableObject {
         return min(1, max(0, scalar))
     }
 
+    private func average(_ values: [Float32]) -> Double {
+        guard !values.isEmpty else { return 0 }
+        return Double(values.reduce(0, +) / Float32(values.count))
+    }
+
     private func setUnavailable(_ message: String) {
         deviceID = kAudioObjectUnknown
         volumeAddresses = []
+        channelVolumes = []
+        hasMasterVolume = false
         isAvailable = false
         status = message
     }
