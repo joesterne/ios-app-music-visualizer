@@ -47,7 +47,7 @@ enum AudioSource: String, CaseIterable, Identifiable {
 }
 
 enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
-    case yosemite, aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan, superMario, spaceFlight, fallout, forestWalk
+    case yosemite, aurora, spectrum, orbit, waveform, tunnel, constellation, terrain, bloom, tron, halo, ironMan, superMario, spaceFlight, fallout, forestWalk, minecraft
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -74,6 +74,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .superMario: "Run, jump, and follow the music"
         case .spaceFlight: "Bank past planets. Slip between starships."
         case .forestWalk: "Follow the trail. Discover the wildlife."
+        case .minecraft: "Dig in. Ores glow to the beat."
         case .fallout: "Vault doors. Green phosphor. Wasteland radio."
         case .yosemite: "Clouds over the valley"
         }
@@ -95,6 +96,7 @@ enum VisualizerStyle: String, CaseIterable, Identifiable, Codable {
         case .spaceFlight: "airplane"
         case .fallout: "gearshape.2"
         case .forestWalk: "tree"
+        case .minecraft: "cube"
         case .yosemite: "cloud.sun"
         }
     }

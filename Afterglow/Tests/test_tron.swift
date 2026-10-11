@@ -34,12 +34,16 @@ struct TronTests {
         let savedMario = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(mario))
         precondition(savedMario == mario)
         let expectedStyles: Set<VisualizerStyle> = [.yosemite, .aurora, .spectrum, .orbit,
-            .waveform, .tunnel, .constellation, .terrain, .bloom, .tron, .halo, .ironMan, .superMario, .spaceFlight, .fallout, .forestWalk]
+            .waveform, .tunnel, .constellation, .terrain, .bloom, .tron, .halo, .ironMan, .superMario, .spaceFlight, .fallout, .forestWalk, .minecraft]
         precondition(Set(VisualizerStyle.allCases) == expectedStyles)
         var forest = old
         forest.style = .forestWalk; forest.favorites.append(.forestWalk)
         let savedForest = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(forest))
         precondition(savedForest == forest, "Forest Walk selection and favorites must round-trip")
+        var blocks = old
+        blocks.style = .minecraft; blocks.favorites.append(.minecraft)
+        let savedBlocks = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(blocks))
+        precondition(savedBlocks == blocks, "Minecraft selection and favorites must round-trip")
         var fallout = old
         fallout.style = .fallout; fallout.favorites.append(.fallout)
         let savedFallout = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(fallout))

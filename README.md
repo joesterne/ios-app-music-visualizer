@@ -1,8 +1,10 @@
 # Afterglow — Music Visualizer
 
-A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from sixteen visualizers, including Forest Walk, Tron, Halo, and Iron Man.
+A native music visualizer for **iPhone, iPad, and Mac**, with an interactive browser preview. Choose from seventeen visualizers, including Minecraft, Forest Walk, Tron, Halo, and Iron Man.
 
 **Forest Walk** adds a backpacked walker on a forest trail with randomly timed deer, fox, rabbit, and bird encounters. [Behavior, code organization, and validation](Afterglow/Docs/Forest-Walk.md).
+
+**Minecraft** scrolls a blocky miner across a day/night block world with trees, torches, and creepers; underground ores glow with bass, mids, and treble. [Behavior and validation](Afterglow/Docs/Minecraft.md).
 
 ## Run locally
 
@@ -50,7 +52,7 @@ See the [full setup guide](Afterglow/README.md) for signing, music-source capabi
 - **Halo:** a glowing ringworld, stars, orbiting energy, and audio-responsive spires.
 - **Iron Man:** a white-blue arc reactor, rotating red/gold rings, and reactive HUD accents.
 - **React to audio:** saved preference for measured audio response or independent animation. Streaming companions use independent animation because they do not supply audio samples.
-- **Gallery scrolling:** visible horizontal control for all sixteen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
+- **Gallery scrolling:** visible horizontal control for all seventeen styles, plus palette, sensitivity, speed, glow, detail, favorites, and immersive controls.
 
 The renderers reuse Halo depth orders and browser frequency ranges, skip hidden browser rendering/analysis, and reduce native frame publication during independent animation. No device-specific speedup has been benchmarked.
 

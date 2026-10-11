@@ -88,6 +88,10 @@ enum VisualRenderer {
             ForestWalkRenderer.draw(context: context, size: size, palette: palette, frame: frame,
                                     time: time, sensitivity: sensitivity, glow: glow, detail: detail)
             return
+        case .minecraft:
+            MinecraftRenderer.draw(context: context, size: size, palette: palette, frame: frame,
+                                   time: time, sensitivity: sensitivity, glow: glow, detail: detail)
+            return
         case .tron:
             TronRenderer.draw(context: context, size: size, mode: tronMode, palette: tronPalette,
                               frame: frame, time: time, sensitivity: sensitivity, glow: glow, detail: detail)
@@ -123,6 +127,7 @@ enum VisualRenderer {
         case .superMario: mario(&context, size, frame, time, colors, sensitivity, glow)
         case .spaceFlight: spaceFlight(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .forestWalk: break // Dedicated woodland renderer.
+        case .minecraft: break // Dedicated block-world renderer.
         case .tron: break
         case .yosemite: break // Static backdrop + transparent animated scenery above.
         }
