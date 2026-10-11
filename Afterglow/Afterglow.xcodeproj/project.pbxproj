@@ -315,18 +315,6 @@
 			"path" = "test-fallout-rendering.cjs";
 			"sourceTree" = "<group>";
 		};
-		"94E2EC6F54696DF9C639D40C" = {
-			"isa" = "PBXFileReference";
-			"lastKnownFileType" = "text";
-			"path" = "test-forest-rendering.cjs";
-			"sourceTree" = "<group>";
-		};
-		"F8194340029A7003FF2BEBE1" = {
-			"isa" = "PBXFileReference";
-			"lastKnownFileType" = "sourcecode.swift";
-			"path" = "test-forest.swift";
-			"sourceTree" = "<group>";
-		};
 		"A7F6792D3FD8F3939D747827" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -371,8 +359,6 @@
 				"B486E5C717219C0A46664BF1",
 				"79D9D16E60EEC04F463EE4DB",
 				"5419C4B5956B8E1945377D58",
-				"94E2EC6F54696DF9C639D40C",
-				"F8194340029A7003FF2BEBE1",
 				"A7F6792D3FD8F3939D747827",
 				"CCABE1CF204FBAF30EC4428D",
 				"DF2A0BE366DAC65897FA5CC8",
@@ -498,12 +484,6 @@
 			"path" = "Fallout.md";
 			"sourceTree" = "<group>";
 		};
-		"9C0BC2F2F46F1D0022F2CCD0" = {
-			"isa" = "PBXFileReference";
-			"lastKnownFileType" = "net.daringfireball.markdown";
-			"path" = "Forest-Walk.md";
-			"sourceTree" = "<group>";
-		};
 		"07D388F7A1EF6A31D0EB307E" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "net.daringfireball.markdown";
@@ -547,7 +527,6 @@
 				"41748997A2E7D361562C7B8B",
 				"F3E0819278FDF815473E84E0",
 				"C89EBC00104465605C5E103F",
-				"9C0BC2F2F46F1D0022F2CCD0",
 				"07D388F7A1EF6A31D0EB307E",
 				"BDCDD6386F4E13B8592639C7",
 				"5624B3485DEBE2C3851DFFE6",

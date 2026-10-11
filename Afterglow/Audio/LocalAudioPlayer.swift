@@ -24,12 +24,20 @@ final class LocalAudioPlayer {
     }
     var volume: Float = 0.8 { didSet { player.volume = volume } }
 
+    private let analyzer: AudioAnalyzer
+    private var graphConfigured = false
+
     init(analyzer: AudioAnalyzer) {
+        self.analyzer = analyzer
+        player.volume = volume
+    }
+    private func configureGraph() {
+        guard !graphConfigured else { return }
         engine.attach(player)
-        engine.mainMixerNode.installTap(onBus: 0, bufferSize: 2048, format: nil) { buffer, _ in
+        engine.mainMixerNode.installTap(onBus: 0, bufferSize: 2048, format: nil) { [analyzer] buffer, _ in
             analyzer.consume(buffer)
         }
-        player.volume = volume
+        graphConfigured = true
     }
     func load(_ url: URL) throws {
         clear()
@@ -37,6 +45,7 @@ final class LocalAudioPlayer {
         guard next.length > 0, next.processingFormat.sampleRate > 0 else {
             throw AfterglowError.message("This audio file has no playable samples.")
         }
+        configureGraph()
         file = next
         engine.disconnectNodeOutput(player)
         engine.connect(player, to: engine.mainMixerNode, format: next.processingFormat)
