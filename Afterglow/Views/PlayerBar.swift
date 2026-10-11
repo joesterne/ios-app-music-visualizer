@@ -26,6 +26,15 @@ struct PlayerBar: View {
                         Text(model.source.reactive ? (model.isPlaying ? "LIVE INPUT" : "INPUT STOPPED") : "AMBIENT").font(.system(size: 8, design: .monospaced))
                             .tracking(1).foregroundStyle(StudioTheme.muted)
                     }
+                    #if os(macOS)
+                    Button { model.showVolumeMixer = true } label: {
+                        Image(systemName: "slider.vertical.3")
+                            .font(.system(size: 13))
+                            .frame(width: 36, height: 36)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Open Mac volume mixer")
+                    #endif
                 }
             }
             if hasTransport && model.duration > 0 {
@@ -41,6 +50,11 @@ struct PlayerBar: View {
             }
         }.padding(.horizontal, compact ? 20 : 28).padding(.vertical, compact ? 14 : 18)
             .background(StudioTheme.panel)
+            #if os(macOS)
+            .sheet(isPresented: $model.showVolumeMixer) {
+                MacVolumeMixerSheet()
+            }
+            #endif
     }
     private var artwork: some View {
         ZStack {
@@ -75,3 +89,98 @@ struct PlayerBar: View {
         return String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
 }
+
+
+#if os(macOS)
+private struct MacVolumeMixerSheet: View {
+    @EnvironmentObject private var model: StudioModel
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var output = MacOutputVolume()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Volume mixer").font(.title3.weight(.semibold))
+                    Text("Afterglow and your current Mac output")
+                        .font(.subheadline)
+                        .foregroundStyle(StudioTheme.muted)
+                }
+                Spacer()
+                Button("Done") { dismiss() }
+            }
+
+            GroupBox {
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Afterglow playback", systemImage: "music.note")
+                        .font(.headline)
+                    HStack(spacing: 12) {
+                        Image(systemName: "speaker.fill")
+                            .foregroundStyle(StudioTheme.muted)
+                        Slider(value: $model.volume, in: 0...1)
+                            .accessibilityLabel("Afterglow local playback volume")
+                        Text(model.volume, format: .percent.precision(.fractionLength(0)))
+                            .monospacedDigit()
+                            .frame(width: 42, alignment: .trailing)
+                    }
+                    Text("Applies to audio files played inside Afterglow.")
+                        .font(.caption)
+                        .foregroundStyle(StudioTheme.muted)
+                }
+                .padding(.vertical, 4)
+            } label: {
+                Text("Afterglow")
+            }
+
+            GroupBox {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Label("Mac output", systemImage: "speaker.wave.3")
+                            .font(.headline)
+                        Spacer()
+                        Button {
+                            output.refresh()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Refresh Mac output volume")
+                    }
+
+                    if output.isAvailable {
+                        HStack(spacing: 12) {
+                            Image(systemName: "speaker.fill")
+                                .foregroundStyle(StudioTheme.muted)
+                            Slider(
+                                value: Binding(
+                                    get: { output.volume },
+                                    set: { output.setVolume($0) }
+                                ),
+                                in: 0...1
+                            )
+                            .accessibilityLabel("Mac output volume")
+                            Text(output.volume, format: .percent.precision(.fractionLength(0)))
+                                .monospacedDigit()
+                                .frame(width: 42, alignment: .trailing)
+                        }
+                    }
+
+                    Text(output.status)
+                        .font(.caption)
+                        .foregroundStyle(StudioTheme.muted)
+                }
+                .padding(.vertical, 4)
+            } label: {
+                Text("Mac output")
+            }
+
+            Text("This adjusts the system volume for the selected macOS output device, not the volume of other individual apps.")
+                .font(.caption)
+                .foregroundStyle(StudioTheme.muted)
+        }
+        .padding(24)
+        .frame(width: 410)
+        .onAppear { output.refresh() }
+    }
+}
+#endif
