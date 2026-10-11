@@ -84,7 +84,7 @@ final class MacOutputVolume: ObservableObject {
         )
         var size = UInt32(MemoryLayout<AudioDeviceID>.size)
         let deviceStatus = AudioObjectGetPropertyData(
-            kAudioObjectSystemObject, &address, 0, nil, &size, &device
+            AudioObjectID(kAudioObjectSystemObject), &address, 0, nil, &size, &device
         )
         guard deviceStatus == noErr, device != kAudioObjectUnknown else {
             setUnavailable("Afterglow could not find the current Mac output device.")
