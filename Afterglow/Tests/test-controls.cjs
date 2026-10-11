@@ -31,7 +31,7 @@ async function fixture(storage=new Map()){
 (async()=>{
  const a=await fixture();const {w,d,run,click,event,tick,settle}=a;
  check([...d.querySelectorAll('button')].every(button=>typeof button.onclick==='function'),'every rendered button has a handler');
- check(d.querySelectorAll('.card').length===15,'all fifteen visualizer buttons exist');
+ check(d.querySelectorAll('.card').length===16,'all sixteen visualizer buttons exist');
  for(const card of d.querySelectorAll('.card')){card.click();check(run('style')===card.dataset.style,'visualizer '+card.dataset.style);check(card.getAttribute('aria-pressed')==='true','selected visualizer announced')}
  for(const button of d.querySelectorAll('.palette')){button.click();check(run('palette')===button.dataset.palette,'full palette '+button.dataset.palette)}
  for(const button of d.querySelectorAll('[data-duo-palette]')){button.click();check(run('palette')===button.dataset.duoPalette,'quick palette '+button.dataset.duoPalette)}
@@ -65,7 +65,7 @@ async function fixture(storage=new Map()){
  for(const source of ['spotify','apple','other']){click('[data-source="'+source+'"]');check(run('source')===source,'source '+source);check(a.opened.at(-1)[0].startsWith('https://'),'launcher opens URL');check(d.querySelector('#toast a'),'launcher has fallback link')}
  const prior=run('source');click('[data-source=system]');check(run('source')===prior&&d.getElementById('toast').textContent.includes('native Mac'),'system button explains native-only capability');
  // Integrated styles and audio controls retain explicit snapshots and playback.
- for(const visual of ['superMario','spaceFlight','yosemite','fallout']){
+ for(const visual of ['superMario','spaceFlight','yosemite','fallout','forestWalk']){
   run(`pickStyle('${visual}');audioReactive=false;savePreferences();resetPreferences();restorePreferences()`);
   check(run('style')===visual&&!run('audioReactive'),'new scene and response survive save/restore: '+visual);
  }
@@ -83,7 +83,7 @@ async function fixture(storage=new Map()){
  // Count expensive thumbnail passes rather than claiming a wall-clock benchmark.
  run("fps=60;paused=false;source='ambient';pickPalette('Ultraviolet');gain=1.25;glow=.6;requestThumbnails()");tick();a.paints.length=0;
  for(let i=0;i<50;i++)await event('speed','input',.2+i*.02);tick();check(a.paints.filter(p=>p.small).length===0,'50 speed events do not redraw static thumbnails');
- a.paints.length=0;for(let i=0;i<50;i++)await event('gain','input',.2+i*.04);tick();check(a.paints.filter(p=>p.small).length===15,'50 sensitivity events coalesce into one fifteen-card pass');
+ a.paints.length=0;for(let i=0;i<50;i++)await event('gain','input',.2+i*.04);tick();check(a.paints.filter(p=>p.small).length===16,'50 sensitivity events coalesce into one sixteen-card pass');
  a.media.motion({matches:true});tick();check(d.getElementById('pause-motion').disabled&&a.raf.size===0,'Reduce Motion change suspends ambient animation');
  run("source='local';audio.pause();paused=true;clearSignal();requestRender()");const readsBefore=a.reads();tick();check(a.reads()===readsBefore&&a.raf.size===0,'paused audio and motion perform no analysis or idle redraw');
  check(a.media.errors.length===0,'no uncaught UI event errors');a.close();

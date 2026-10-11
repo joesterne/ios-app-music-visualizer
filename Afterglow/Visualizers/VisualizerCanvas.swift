@@ -83,15 +83,20 @@ enum VisualRenderer {
                      tronMode: TronMode = .lightCycles, tronPalette: TronPalette = .lightBlue) {
         let width = size.width, height = size.height
         guard width > 1, height > 1 else { return }
-        if style == .tron {
+        switch style {
+        case .forestWalk:
+            ForestWalkRenderer.draw(context: context, size: size, palette: palette, frame: frame,
+                                    time: time, sensitivity: sensitivity, glow: glow, detail: detail)
+            return
+        case .tron:
             TronRenderer.draw(context: context, size: size, mode: tronMode, palette: tronPalette,
                               frame: frame, time: time, sensitivity: sensitivity, glow: glow, detail: detail)
             return
-        }
-        if style == .yosemite {
+        case .yosemite:
             YosemiteScene.draw(context: context, size: size, palette: palette, frame: frame,
                                time: time, sensitivity: sensitivity, glow: glow, detail: detail)
             return
+        default: break
         }
         var context = context
         let rect = CGRect(origin: .zero, size: size)
@@ -117,6 +122,7 @@ enum VisualRenderer {
         case .fallout: fallout(&context, size, frame, time, sensitivity, glow, detail)
         case .superMario: mario(&context, size, frame, time, colors, sensitivity, glow)
         case .spaceFlight: spaceFlight(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .forestWalk: break // Dedicated woodland renderer.
         case .tron: break
         case .yosemite: break // Static backdrop + transparent animated scenery above.
         }
