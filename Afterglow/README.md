@@ -74,6 +74,8 @@ The preview is a browser implementation, not the compiled native app. It does no
 
 The Mac target is a native macOS app, using standard architectures, including **arm64 for Apple silicon**. It is intended for macOS 14 or later and does not rely on Rosetta or an iPhone compatibility window. The same project also permits the iOS app to be made available on Apple silicon, but the native Mac target provides system-audio capture and desktop controls.
 
+**Mac volume mixer:** click the sliders button in the player bar to adjust Afterglow's local-file playback volume and the current macOS output device's master volume. The Mac output control affects the selected output device, rather than individual third-party apps. It is unavailable when that output device does not expose a software volume control.
+
 ## Run on iPhone or iPad
 
 1. Choose the **Afterglow-iOS** scheme and an iOS 17-or-newer simulator or connected device.
