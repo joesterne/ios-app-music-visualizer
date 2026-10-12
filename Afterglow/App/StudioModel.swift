@@ -22,6 +22,9 @@ final class StudioModel: ObservableObject {
     @Published var showSources = false
     @Published var showSettings = false
     @Published var showImporter = false
+    #if os(macOS)
+    @Published var showVolumeMixer = false
+    #endif
     @Published var immersive = false
     @Published var motionPaused = false
     @Published var volume: Double = 0.8 { didSet { local.volume = Float(volume) } }
