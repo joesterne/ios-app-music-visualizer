@@ -16,6 +16,7 @@ fi
 bash Scripts/test-dsp.sh
 bash Scripts/test-tron.sh
 bash Scripts/test-forest.sh
+bash Scripts/test-minecraft.sh
 test_directory=$(mktemp -d)
 trap 'rm -rf "$test_directory"' EXIT
 xcrun swiftc -parse-as-library App/Models.swift Visualizers/TronSettings.swift Visualizers/VisualizerClock.swift \

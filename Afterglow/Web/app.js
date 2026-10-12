@@ -1,7 +1,7 @@
 
 "use strict";
 const $=id=>document.getElementById(id);
-const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.'],['fallout','Fallout','Vault doors. Green phosphor. Wasteland radio.'],['forestWalk','Forest Walk','Follow the trail. Discover the wildlife.']];
+const styles=[['yosemite','Yosemite','Clouds over the valley'],['aurora','Aurora','Ribbons of light'],['spectrum','Spectrum','Every frequency, in color'],['orbit','Orbit','Sound in circular motion'],['waveform','Waveform','The shape of a moment'],['tunnel','Tunnel','An infinite escape'],['constellation','Constellation','A sky of connections'],['terrain','Terrain','Ride the frequency landscape'],['bloom','Bloom','Let the sound unfold'],['tron','Tron','Enter the grid'],['halo','Halo','Beyond the ringworld'],['ironMan','Iron Man','Power the arc reactor'],['superMario','Super Mario','Run, jump, and follow the music'],['spaceFlight','Space Flight','Bank past planets. Slip between starships.'],['fallout','Fallout','Vault doors. Green phosphor. Wasteland radio.'],['forestWalk','Forest Walk','Follow the trail. Discover the wildlife.'],['minecraft','Minecraft','Dig in. Ores glow to the beat.']];
 const palettes={Ultraviolet:['#91a1ff','#cb79ff','#f3b0e6'],Glacier:['#55dcd9','#68b2ff','#c6fff2'],Ember:['#ff9760','#f25d86','#ffe0a3'],Candy:['#ff80c7','#868bff','#57eee0'],Monochrome:['#d1d7e6','#ffffff','#737f99']};
 const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reducedMotion=motionPreference.matches;
 function motionStopped(){return paused||reducedMotion}
@@ -238,7 +238,7 @@ function renderMario(canvas,t,b){
 
 // Scene renderers share a single dispatch point; signal-based styles continue below.
 const sceneRenderers=Object.freeze({
- forestWalk:renderForestWalk, fallout:renderFallout, spaceFlight:renderSpace,
+ forestWalk:renderForestWalk, minecraft:renderMinecraft, fallout:renderFallout, spaceFlight:renderSpace,
  superMario:renderMario, tron:renderTron,
  yosemite:(canvas,time,bands,small)=>renderYosemite(canvas,time,small)
 });
