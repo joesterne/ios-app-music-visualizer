@@ -81,7 +81,8 @@ enum YosemiteScene {
         world.translateBy(x: rect.minX, y: rect.minY)
         world.scaleBy(x: scale, y: scale)
         let sprite = world.resolve(cloudImage)
-        let energy = min(1, max(0, Double(frame.rms) * sensitivity * 3))
+        let audio = frame.response(sensitivity)
+        let energy = audio.energy
 
         var atmosphere = world
         atmosphere.clip(to: sky)
@@ -91,7 +92,7 @@ enum YosemiteScene {
             let y = cloud.1 + sin(time * 0.024 + Double(index)) * 0.006
             let width = cloud.2 * imageWidth
             var layer = atmosphere
-            layer.opacity = index == 2 || index == 4 ? 0.46 : 0.78
+            layer.opacity = (index == 2 || index == 4 ? 0.40 : 0.66) + audio.mid * 0.16
             layer.draw(sprite, in: CGRect(x: x * imageWidth, y: y * imageHeight,
                                           width: width, height: width / 3))
         }
@@ -118,17 +119,17 @@ enum YosemiteScene {
             let x = 0.265 + sin(time * 0.032 + i * 1.7) * 0.042
             let y = 0.635 + i * 0.070 + sin(time * 0.024 + i) * 0.008
             var mist = world
-            mist.opacity = (0.13 - i * 0.025) * (0.65 + glow * 0.35 + energy * 0.10)
+            mist.opacity = (0.13 - i * 0.025) * (0.65 + glow * 0.35 + audio.bass * 0.35)
             mist.draw(sprite, in: CGRect(x: x * imageWidth, y: y * imageHeight,
                                          width: imageWidth * 0.48, height: imageHeight * 0.08))
         }
 
-        // Restrained sunlight responds to measured amplitude; scenery never pumps.
+        // Music shapes the light and atmosphere while the landscape stays fixed.
         let light = palette == .glacier ? Color(hex: 0xC7EAFF) : Color(hex: 0xFFE1AB)
         var sunlight = world
         sunlight.blendMode = .screen
         sunlight.fill(Path(CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight)),
-                      with: .radialGradient(Gradient(colors: [light.opacity(glow * (0.035 + energy * 0.065)), .clear]),
+                      with: .radialGradient(Gradient(colors: [light.opacity((0.25 + glow * 0.75) * (0.025 + energy * 0.09 + audio.treble * 0.07 + audio.hit * 0.04)), .clear]),
                                             center: CGPoint(x: imageWidth * 0.22, y: imageHeight * 0.25),
                                             startRadius: 0, endRadius: imageWidth * 0.62))
     }

@@ -8,7 +8,8 @@ enum ForestWalkRenderer {
         let w = size.width, h = size.height, u = min(w, h)
         guard w > 1, h > 1 else { return }
         let t = time.isFinite ? max(0, time) : 0
-        let energy = min(1, max(0, Double(frame.rms) * sensitivity * 3))
+        let audio = frame.response(sensitivity)
+        let energy = audio.energy
         let quality = min(1, max(0, detail))
         let random = ForestWalkGeometry.random
         var c = context
@@ -45,7 +46,7 @@ enum ForestWalkRenderer {
                 let x = w * (0.5 + side * (0.07 + depth * (0.52 + random(seed) * 0.3)))
                 let y = h * (0.39 + depth * 0.69), height = h * (0.16 + depth * 0.76)
                 let width = u * (0.014 + depth * 0.043)
-                let sway = sin(t * 0.6 + seed) * u * 0.004 * (1 + energy * 0.4)
+                let sway = sin(t * 0.6 + seed) * u * 0.004 * (1 + energy * 0.4 + audio.bass * 0.5 + audio.hit * 0.3)
                 line(&c, [(x,y),(x+sway,y-height)], depth > 0.45 ? 0x172F29 : 0x36594A, width)
                 line(&c, [(x-width*0.22,y),(x+sway-width*0.22,y-height)], 0x99A775, max(1,width*0.12), 0.22)
                 for tier in 0..<3 {
@@ -58,7 +59,7 @@ enum ForestWalkRenderer {
         for i in 0..<4 {
             let n = Double(i)
             polygon(&c, [(w*(0.45+n*0.05),0),(w*(0.48+n*0.055),0),
-                         (w*(0.19+n*0.24),h*0.86),(w*(0.08+n*0.24),h*0.86)], 0xFFE8A3, (0.024+energy*0.025)*glow)
+                         (w*(0.19+n*0.24),h*0.86),(w*(0.08+n*0.24),h*0.86)], 0xFFE8A3, (0.024+energy*0.025+audio.hit*0.04+audio.treble*0.02)*glow)
         }
         for i in 0..<Int(12+quality*24) {
             let z = (random(Double(i)+260)+t*0.045).truncatingRemainder(dividingBy: 1), d = z*z
@@ -77,8 +78,8 @@ enum ForestWalkRenderer {
             let n = Double(i)
             let x = w*(0.08+random(n+400)*0.84)+sin(t*0.45+n)*u*0.018
             let y = h*(0.3+random(n+460)*0.53)+cos(t*0.6+n)*u*0.014
-            let r = u*(0.0015+energy*0.0012)
-            let alpha = (0.3+0.7*pow(sin(t+n),2))*(0.4+glow*0.6)
+            let r = u*(0.0015+energy*0.0012+audio.hit*0.0018)
+            let alpha = (0.25+0.6*pow(sin(t+n),2)+audio.treble*0.15+audio.hit*0.25)*(0.4+glow*0.6)
             lights.fill(Path(ellipseIn: CGRect(x:x-r,y:y-r,width:r*2,height:r*2)), with:.color(palette.accent.opacity(alpha)))
         }
     }

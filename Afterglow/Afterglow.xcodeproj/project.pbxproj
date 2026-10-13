@@ -39,6 +39,12 @@
 			"path" = "AudioAnalyzer.swift";
 			"sourceTree" = "<group>";
 		};
+		"031D1A8457256AC26B87189D" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "AudioResponse.swift";
+			"sourceTree" = "<group>";
+		};
 		"7D000E07C9682DE3F544463E" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "sourcecode.swift";
@@ -61,6 +67,7 @@
 			"isa" = "PBXGroup";
 			"children" = (
 				"8EC337745EF7469754D41C03",
+				"031D1A8457256AC26B87189D",
 				"7D000E07C9682DE3F544463E",
 				"7ABBE49D948F90877E405E18",
 				"7EE17857ADFE5033BC626FB8",
@@ -311,6 +318,18 @@
 			"path" = "compare_dsp.py";
 			"sourceTree" = "<group>";
 		};
+		"10C5BD60CE91A7675A52F38C" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "text";
+			"path" = "test-audio-reactivity.cjs";
+			"sourceTree" = "<group>";
+		};
+		"27283DC53C2A75C697271130" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "test-audio-response.swift";
+			"sourceTree" = "<group>";
+		};
 		"B486E5C717219C0A46664BF1" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "text";
@@ -394,6 +413,8 @@
 			"children" = (
 				"FF7CD79B2C528F8811E89E3D",
 				"847367C1E37C32B07C658AE4",
+				"10C5BD60CE91A7675A52F38C",
+				"27283DC53C2A75C697271130",
 				"B486E5C717219C0A46664BF1",
 				"79D9D16E60EEC04F463EE4DB",
 				"5419C4B5956B8E1945377D58",
@@ -539,6 +560,12 @@
 			"path" = "Forest-Walk.md";
 			"sourceTree" = "<group>";
 		};
+		"7F472A5D4BE20419BC34C482" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "net.daringfireball.markdown";
+			"path" = "Minecraft.md";
+			"sourceTree" = "<group>";
+		};
 		"07D388F7A1EF6A31D0EB307E" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "net.daringfireball.markdown";
@@ -583,6 +610,7 @@
 				"F3E0819278FDF815473E84E0",
 				"C89EBC00104465605C5E103F",
 				"9C0BC2F2F46F1D0022F2CCD0",
+				"7F472A5D4BE20419BC34C482",
 				"07D388F7A1EF6A31D0EB307E",
 				"BDCDD6386F4E13B8592639C7",
 				"5624B3485DEBE2C3851DFFE6",
@@ -675,6 +703,10 @@
 		"102C13574794DD6DC4073506" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "8EC337745EF7469754D41C03";
+		};
+		"77D95F1F50B929710CB25F68" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "031D1A8457256AC26B87189D";
 		};
 		"557F29FE273A8D585B0F080D" = {
 			"isa" = "PBXBuildFile";
@@ -776,6 +808,7 @@
 				"AB96120F0EC603B83BE6AC12",
 				"43AEA878CC0F726231D2CF59",
 				"102C13574794DD6DC4073506",
+				"77D95F1F50B929710CB25F68",
 				"557F29FE273A8D585B0F080D",
 				"FEF60240EE89FA2C51F3D518",
 				"40A5A88217CCC0A9B58D09C6",
@@ -919,6 +952,10 @@
 			"isa" = "PBXBuildFile";
 			"fileRef" = "8EC337745EF7469754D41C03";
 		};
+		"7B7075A46558209A3478F48D" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "031D1A8457256AC26B87189D";
+		};
 		"E85228211F26871BC726AB0A" = {
 			"isa" = "PBXBuildFile";
 			"fileRef" = "7D000E07C9682DE3F544463E";
@@ -1019,6 +1056,7 @@
 				"50A2F13B30AE7D4BF44FC4E3",
 				"E6E9E081DF4F9F57BA49A0C1",
 				"5EA75DFBBEA6C5D76AAE35F1",
+				"7B7075A46558209A3478F48D",
 				"E85228211F26871BC726AB0A",
 				"3FD95C337EF2D88279A03CAF",
 				"AD697039E653315A146A4E77",

@@ -12,11 +12,12 @@ enum MinecraftRenderer {
         let t = time.isFinite ? max(0, time) : 0
         let quality = min(1, max(0, detail))
         let random = MinecraftGeometry.random
-        let energy = min(1, max(0, Double(frame.rms) * sensitivity * 3))
+        let audio = frame.response(sensitivity)
+        let energy = audio.energy
         func band(_ from: Int, _ to: Int) -> Double {
             var sum = 0.0
             for i in from..<max(from, min(to, frame.bands.count)) { sum += Double(frame.bands[i]) }
-            return min(1, max(0, sum / Double(to - from) * sensitivity))
+            return AudioResponse.band(sum / Double(to - from), gain: sensitivity)
         }
         let levels = [0, band(8, 24) * 0.6, band(8, 24), band(0, 8), band(36, 64)]
         let b = max(4, (u / 20).rounded()), p = b / 16
@@ -118,7 +119,7 @@ enum MinecraftRenderer {
         box(&c, minerX - 4 * p, feet - 32 * p, 2 * p, 5 * p, 0x4A3222)
         box(&c, minerX + 2 * p, feet - 28.5 * p, 1.5 * p, 1.5 * p, 0x3A3AA0)
         // The pickaxe swings harder with louder input.
-        let chop = -0.9 - swing * 0.5 - energy * 0.6 * abs(sin(t * 9))
+        let chop = -0.9 - swing * 0.5 - (energy * 0.35 + audio.hit * 0.55) * abs(sin(t * 9))
         var arm = c
         arm.translateBy(x: minerX, y: (feet - 23 * p).rounded())
         arm.rotate(by: .radians(chop))
@@ -137,7 +138,7 @@ enum MinecraftRenderer {
             box(&light, x - b * 0.2, y - b * 0.2, b * 1.4, b * 1.4, oreColors[ore], levels[ore] * (0.15 + glow * 0.35))
         }
         for (x, y, seed) in torches {
-            let flicker = 0.8 + 0.2 * sin(t * 13 + seed * 2.3), r = b * (1 + energy * 1.2) * flicker * 1.6
+            let flicker = 0.8 + 0.2 * sin(t * 13 + seed * 2.3), r = b * (1 + energy * 1.2 + audio.hit * 0.5) * flicker * 1.6
             var halo = c
             halo.opacity = (0.06 + 0.5 * (1 - daylight)) * (0.4 + glow * 0.6)
             halo.fill(Path(CGRect(x: x - r, y: y - r, width: r * 2, height: r * 2)), with: .radialGradient(
@@ -151,7 +152,7 @@ enum MinecraftRenderer {
         orbs.addFilter(.shadow(color: palette.accent.opacity(glow), radius: glow * b * 0.6))
         for i in 0..<Int(3 + quality * 6) {
             let n = Double(i), rise = (t * 0.35 + random(n + 900)).truncatingRemainder(dividingBy: 1)
-            let orb = p * (2.5 + energy * 2.5)
+            let orb = p * (2.5 + energy * 2.5 + audio.hit * 1.5)
             let x = minerX + sin(t * 1.3 + n * 2.1) * b * 1.4 - orb / 2, y = feet - b * 2.4 - rise * b * 3
             orbs.fill(Path(CGRect(x: x, y: y, width: orb, height: orb)),
                       with: .color(palette.accent.opacity((1 - rise) * (0.5 + glow * 0.5))))

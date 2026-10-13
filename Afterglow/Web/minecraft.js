@@ -22,9 +22,9 @@ const minecraftOreColors=['#1e1e1e','#d8af93','#f7d33c','#e0261f','#4ee6e0'];
 function renderMinecraft(canvas,time,bands,small=false) {
  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,U=Math.min(W,H);
  if(W<=1||H<=1)return;
- const t=Math.max(0,Number.isFinite(time)?time:0),quality=small?.3:detail,accent=palettes[palette][0];
- const band=(from,to)=>{let sum=0;for(let i=from;i<to;i++)sum+=Number(bands?.[i])||0;return Math.min(1,Math.max(0,sum/(to-from)*gain))};
- const energy=Math.min(1,Math.max(0,rms*gain*3)),levels=[0,band(8,24)*.6,band(8,24),band(0,8),band(36,64)];
+ const t=Math.max(0,Number.isFinite(time)?time:0),quality=small?.3:detail,accent=palettes[palette][0],response=musicResponse(bands,small);
+ const band=(from,to)=>{let sum=0;for(let i=from;i<to;i++)sum+=Number(bands?.[i])||0;return bandSignal(sum/(to-from),gain)};
+ const energy=response.energy,levels=[0,band(8,24)*.6,band(8,24),band(0,8),band(36,64)];
  const B=Math.max(4,Math.round(U/20)),p=B/16;
  ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;
  const box=(x,y,w,h,color,alpha=1)=>{ctx.globalAlpha=alpha;ctx.fillStyle=color;ctx.fillRect(Math.round(x),Math.round(y),Math.ceil(w),Math.ceil(h))};
@@ -87,7 +87,7 @@ function renderMinecraft(canvas,time,bands,small=false) {
  box(minerX-4*p,feet-32*p,8*p,8*p,'#c69c7b');box(minerX-4*p,feet-32*p,8*p,2.5*p,'#4a3222');box(minerX-4*p,feet-32*p,2*p,5*p,'#4a3222');
  box(minerX+2*p,feet-28.5*p,1.5*p,1.5*p,'#3a3aa0');
  // The pickaxe swings harder with louder input.
- const chop=-.9-swing*.5-energy*.6*Math.abs(Math.sin(t*9));
+ const chop=-.9-swing*.5-(energy*.35+response.hit*.55)*Math.abs(Math.sin(t*9));
  limb(minerX,feet-23*p,4*p,12*p,chop,'#c69c7b',()=>{ctx.fillStyle='#7a5a30';ctx.fillRect(-.75*p,9*p,1.5*p,11*p);ctx.fillStyle='#4ee6e0';for(let k=-4;k<=4;k++)ctx.fillRect(k*1.4*p-.75*p,18*p+Math.abs(k)*.5*p,1.5*p,1.5*p)});
  // Night falls over the whole world; light sources are drawn above it.
  box(0,0,W,H,'#060a20',(1-daylight)*.5);
@@ -95,7 +95,7 @@ function renderMinecraft(canvas,time,bands,small=false) {
  for(const [x,y,ore] of glows){const level=levels[ore];if(level>.02)box(x-B*.2,y-B*.2,B*1.4,B*1.4,minecraftOreColors[ore],level*(.15+glow*.35))}
  ctx.globalCompositeOperation='source-over';
  for(const [x,y,c] of torches){
-  const flicker=.8+.2*Math.sin(t*13+c*2.3),r=B*(1+energy*1.2)*flicker;
+  const flicker=.8+.2*Math.sin(t*13+c*2.3),r=B*(1+energy*1.2+response.hit*.5)*flicker;
   const halo=ctx.createRadialGradient(x,y,0,x,y,r*1.6);halo.addColorStop(0,'#ffcf5a');halo.addColorStop(1,'#ffcf5a00');
   ctx.globalAlpha=(.06+.5*(1-daylight))*(.4+glow*.6);ctx.fillStyle=halo;ctx.fillRect(x-r*1.6,y-r*1.6,r*3.2,r*3.2);
   box(x-B*.1,y-B*.12,B*.2,B*.2,'#ffe27a');box(x-B*.05,y-B*.06,B*.1,B*.1,'#fff7d0');
@@ -103,7 +103,7 @@ function renderMinecraft(canvas,time,bands,small=false) {
  // Experience orbs drift up from the miner in the palette accent.
  ctx.shadowColor=accent;ctx.shadowBlur=small?0:glow*B*.6;
  for(let i=0;i<Math.floor(3+quality*6);i++){
-  const rise=(t*.35+minecraftRandom(i+900))%1,size=p*(2.5+energy*2.5);
+  const rise=(t*.35+minecraftRandom(i+900))%1,size=p*(2.5+energy*2.5+response.hit*1.5);
   box(minerX+Math.sin(t*1.3+i*2.1)*B*1.4-size/2,feet-B*2.4-rise*B*3,size,size,accent,(1-rise)*(.5+glow*.5));
  }
  ctx.restore();

@@ -109,7 +109,7 @@ enum VisualRenderer {
         context.fill(Path(rect), with: .color(StudioTheme.background))
         let center = CGPoint(x: width * 0.5, y: height * 0.5)
         let colors = palette.colors
-        let energy = min(1, Double(frame.rms) * sensitivity * 3)
+        let energy = frame.response(sensitivity).energy
         context.fill(Path(rect), with: .radialGradient(
             Gradient(colors: [colors[0].opacity(0.095 + energy * 0.10), .clear]),
             center: center, startRadius: 0, endRadius: max(width, height) * 0.6))
@@ -142,7 +142,8 @@ enum VisualRenderer {
         c.blendMode = .normal
         let w = s.width, h = s.height, unit = min(w, h)
         let phase = (max(0, t) * 0.16).truncatingRemainder(dividingBy: .pi * 2)
-        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        let audio = f.response(gain)
+        let energy = audio.energy
         let green = Color(hex: 0x9CF776), amber = Color(hex: 0xE2BD69)
         let floor = h * 0.56, radius = min(w * 0.24, h * 0.23)
         func box(_ g: inout GraphicsContext, _ x: Double, _ y: Double, _ width: Double, _ height: Double, _ color: Color) {
@@ -211,7 +212,7 @@ enum VisualRenderer {
             c.stroke(glass,with:.color(Color(hex:0x1B2719)),lineWidth:6)
             var screen = c;screen.clip(to:glass)
             screen.fill(glass,with:.color(Color(hex:0x061B0C)))
-            screen.fill(glass,with:.radialGradient(Gradient(colors:[green.opacity(0.12+energy*0.2),Color(hex:0x021006)]),center:CGPoint(x:sx+sw*0.45,y:sy+sh*0.4),startRadius:0,endRadius:sw*0.7))
+            screen.fill(glass,with:.radialGradient(Gradient(colors:[green.opacity(0.10+energy*0.16+audio.hit*0.20),Color(hex:0x021006)]),center:CGPoint(x:sx+sw*0.45,y:sy+sh*0.4),startRadius:0,endRadius:sw*0.7))
             let font = sw*0.046, step = sh*0.117
             let shift = Int((max(0,t)*1.5).truncatingRemainder(dividingBy:Double(falloutCode.count)))
             var ink = screen;ink.addFilter(.shadow(color:green.opacity(glow),radius:glow*unit*0.004))
@@ -223,8 +224,8 @@ enum VisualRenderer {
             }
             var trace = Path()
             for j in 0..<40 {
-                let value = min(1,max(0,Double(f.bands[(j+index*13)%64])*gain))
-                let point = CGPoint(x:sx+sw*(0.04+Double(j)*0.92/39),y:sy+sh*(0.88-value*0.11))
+                let value = AudioResponse.band(Double(f.bands[(j+index*13)%64]), gain: gain)
+                let point = CGPoint(x:sx+sw*(0.04+Double(j)*0.92/39),y:sy+sh*(0.92-value*0.23))
                 if j == 0 { trace.move(to:point) } else { trace.addLine(to:point) }
             }
             ink.stroke(trace,with:.color(green),lineWidth:max(1,pw*0.004))
@@ -233,7 +234,7 @@ enum VisualRenderer {
             let sweep = (t*0.1+Double(index)*0.45).truncatingRemainder(dividingBy:1)*sh
             box(&screen,sx,sy+sweep,sw,sh*0.025,green.opacity(0.09))
             let dx = left+pw*0.885, dy = top+ph*0.38
-            ring(&c,dx,dy,pw*0.065,Color(hex:0x25341F),pw*0.025);ring(&c,dx,dy,pw*0.047,Color(hex:0xC3C393),pw*0.01)
+            ring(&c,dx,dy,pw*0.065,green.opacity(0.2+audio.bass*0.7),pw*0.025);ring(&c,dx,dy,pw*0.047,Color(hex:0xC3C393),pw*0.01)
             line(&c,dx,dy,dx+pw*0.034*cos(phase),dy+pw*0.034*sin(phase),amber,pw*0.008)
             for j in 0..<4 { line(&c,left+pw*0.83,top+ph*(0.61+Double(j)*0.048),left+pw*0.95,top+ph*(0.61+Double(j)*0.048),Color(hex:0x293B24),pw*0.012) }
             box(&c,left+pw*0.84,top+ph*0.12,pw*0.07,ph*0.045,energy>0.3 ? green : amber)
@@ -253,7 +254,8 @@ enum VisualRenderer {
                                     _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
         c.blendMode = .normal
         let w = s.width, h = s.height, unit = min(w, h)
-        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        let audio = f.response(gain)
+        let energy = audio.energy
         let bank = sin(t * 0.52) * 0.11, rise = cos(t * 0.37) * 0.055
         let cx = w * (0.5 + bank), cy = h * (0.45 + rise)
         func point(_ x: Double, _ y: Double, _ z: Double) -> CGPoint {
@@ -271,7 +273,7 @@ enum VisualRenderer {
             let radius = 0.16 + abs(sin(seed * 43.7)) * 1.5
             let z = 0.16 + (1 - (seed * 0.618 + t * 0.28).truncatingRemainder(dividingBy: 1)) * 3
             let x = cos(angle) * radius, y = sin(angle) * radius
-            line([point(x, y, z), point(x, y, z + 0.05 + energy * 0.10)], .white.opacity(0.28 + 0.6 / (z + 1)), 0.5 + 1 / (z + 1))
+            line([point(x, y, z), point(x, y, z + 0.04 + audio.bass * 0.18 + audio.hit * 0.24)], .white.opacity(min(1, 0.18 + 0.6 / (z + 1) + audio.treble * 0.3)), 0.5 + 1 / (z + 1))
         }
         // Draw far objects first. Lateral separation increases as objects approach: an automatic dodge.
         let objects = (0..<9).map { i in
@@ -295,8 +297,8 @@ enum VisualRenderer {
                 var ship = Path(); ship.addLines([CGPoint(x:p.x,y:p.y-r),CGPoint(x:p.x+r*1.7,y:p.y+r*0.6),CGPoint(x:p.x+r*0.3,y:p.y+r*0.3),CGPoint(x:p.x,y:p.y+r),CGPoint(x:p.x-r*0.3,y:p.y+r*0.3),CGPoint(x:p.x-r*1.7,y:p.y+r*0.6)]); ship.closeSubpath()
                 c.fill(ship, with: .color(Color(red: 0.15, green: 0.22, blue: 0.35)))
                 c.stroke(ship, with: .color(colors[0]), lineWidth: max(1,r*0.045))
-                line([CGPoint(x:p.x-r*0.35,y:p.y+r*0.4),CGPoint(x:p.x-r*0.35,y:p.y+r*(1.2+energy))], colors[2], max(2,r*0.13))
-                line([CGPoint(x:p.x+r*0.35,y:p.y+r*0.4),CGPoint(x:p.x+r*0.35,y:p.y+r*(1.2+energy))], colors[2], max(2,r*0.13))
+                line([CGPoint(x:p.x-r*0.35,y:p.y+r*0.4),CGPoint(x:p.x-r*0.35,y:p.y+r*(1.2+energy+audio.hit*0.7))], colors[2], max(2,r*0.13))
+                line([CGPoint(x:p.x+r*0.35,y:p.y+r*0.4),CGPoint(x:p.x+r*0.35,y:p.y+r*(1.2+energy+audio.hit*0.7))], colors[2], max(2,r*0.13))
             }
         }
         // Cockpit stays fixed while the starfield banks, preserving the first-person viewpoint.
@@ -318,7 +320,8 @@ enum VisualRenderer {
         let scale = s.height / 240, width = s.width / scale
         let travel = (max(0, t) * 38).truncatingRemainder(dividingBy: 640)
         let heroX = width * 0.28, camera = travel - heroX
-        let energy = min(1, max(0, Double(f.rms) * gain * 3))
+        let audio = f.response(gain)
+        let energy = audio.energy
         func box(_ x: Double, _ y: Double, _ w: Double, _ h: Double, _ color: Color) {
             c.fill(Path(CGRect(x: x * scale, y: y * scale, width: w * scale, height: h * scale)), with: .color(color))
         }
@@ -354,8 +357,8 @@ enum VisualRenderer {
             for j in 0..<8 {
                 let x = offset + 115 + Double(j) * 48
                 let pulse = band(f, j * 8, gain)
-                box(x - 2, 92 - pulse * 9, 6, 10, gold)
-                box(x - 4, 90 - pulse * 9, 10, 14, gold.opacity(glow * (0.12 + energy * 0.3)))
+                box(x - 2, 92 - pulse * 22 - audio.hit * 6, 6, 10, gold)
+                box(x - 4, 90 - pulse * 22 - audio.hit * 6, 10, 14, gold.opacity(glow * (0.12 + energy * 0.3)))
             }
             box(offset + 610, 76, 3, 112, .white)
             box(offset + 589, 80, 21, 14, colors[0]); box(offset + 606, 71, 10, 6, gold)
@@ -366,7 +369,7 @@ enum VisualRenderer {
             if distance < 64 { jump = max(jump, 86 * (1 - pow(distance / 64, 2))) }
         }
         let step = Int(t * 10) % 2 == 0 ? -1.0 : 1.0
-        let bottom = 188 - jump
+        let bottom = 188 - jump - audio.hit * 12
         for (row, pixels) in marioSprite.enumerated() {
             for (column, pixel) in pixels.enumerated() {
                 let color: Color
@@ -388,7 +391,8 @@ enum VisualRenderer {
     private static func halo(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                              _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
         let unit = min(s.width, s.height)
-        let radius = unit * 0.39
+        let audio = f.response(gain)
+        let radius = unit * (0.36 + audio.bass * 0.035 + audio.hit * 0.018)
         let tilt = -0.34 + sin(t * 0.07) * 0.08
         let flatten = 0.48 + sin(t * 0.09) * 0.08
         func point(_ a: Double, _ r: Double, _ lift: Double = 0) -> CGPoint {
@@ -421,7 +425,7 @@ enum VisualRenderer {
             c.stroke(seam, with: .color(colors[1].opacity(0.35)), lineWidth: 0.7)
             if i % 3 == 0 {
                 var spire = Path(); spire.move(to: point(a, radius * 0.91))
-                spire.addLine(to: point(a, radius * 0.91, unit * (0.025 + signal * 0.13)))
+                spire.addLine(to: point(a, radius * 0.91, unit * (0.015 + signal * 0.18 + audio.hit * 0.035)))
                 trace(&c, spire, color: colors[2], width: 1.2, glow: glow, opacity: 0.4 + signal * 0.5)
             }
         }
@@ -450,8 +454,9 @@ enum VisualRenderer {
         let center = CGPoint(x: s.width * 0.5, y: s.height * 0.46)
         let red = Color(hex: 0xFF493B), gold = Color(hex: 0xFFD080)
         let cyan = Color(hex: 0x75E8FF)
-        let energy = min(1, max(0, Double(f.rms) * gain * 3))
-        let radius = unit * 0.29
+        let audio = f.response(gain)
+        let energy = audio.energy
+        let radius = unit * (0.27 + audio.bass * 0.035 + audio.hit * 0.025)
         func point(_ a: Double, _ r: Double) -> CGPoint {
             CGPoint(x: center.x + cos(a) * r, y: center.y + sin(a) * r)
         }
@@ -495,7 +500,7 @@ enum VisualRenderer {
         // The triangular white-blue heart gives the reactor a distinct silhouette.
         var core = Path()
         for i in 0..<3 {
-            let p = point(-.pi / 2 + Double(i) * .pi * 2 / 3, radius * (0.40 + energy * 0.035))
+            let p = point(-.pi / 2 + Double(i) * .pi * 2 / 3, radius * (0.36 + energy * 0.09 + audio.hit * 0.06))
             if i == 0 { core.move(to: p) } else { core.addLine(to: p) }
         }
         core.closeSubpath()
@@ -524,10 +529,11 @@ enum VisualRenderer {
                        style: StrokeStyle(lineWidth: width, lineCap: .round, lineJoin: .round))
     }
     private static func band(_ frame: AudioFrame, _ index: Int, _ gain: Double) -> Double {
-        min(1, max(0, Double(frame.bands[abs(index) % frame.bands.count]) * gain))
+        AudioResponse.band(Double(frame.bands[abs(index) % frame.bands.count]), gain: gain)
     }
     private static func aurora(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                                _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        let audio = f.response(gain)
         let layers = Int(5 + detail * 8)
         let steps = Int(100 + detail * 100)
         for line in 0..<layers {
@@ -539,21 +545,22 @@ enum VisualRenderer {
                 let signal = band(f, Int(x * 63), gain)
                 let wave = sin(x * 8 + t * 0.65 + l * 0.19) * 0.16
                     + sin(x * 15 - t * 0.34 + l * 0.11) * 0.08
-                let y = s.height * (0.5 + envelope * wave * (0.65 + signal) + (l - Double(layers) / 2) * 0.009)
+                let y = s.height * (0.5 + envelope * wave * (0.40 + signal * 1.25 + audio.bass * 0.5 + audio.hit * 0.3) + (l - Double(layers) / 2) * 0.009)
                 let point = CGPoint(x: x * s.width, y: y)
                 if i == 0 { p.move(to: point) } else { p.addLine(to: point) }
             }
             trace(&c, p, color: colors[line % 3], width: 1.25, glow: glow,
-                  opacity: 0.28 + 0.5 * Double(line + 1) / Double(layers))
+                  opacity: 0.20 + 0.45 * Double(line + 1) / Double(layers) + audio.treble * 0.25)
         }
     }
     private static func spectrum(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                                  _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double) {
+        let audio = f.response(gain)
         let usable = s.width * 0.84, gap = usable / 64
         let base = s.height * 0.72
         for i in 0..<64 {
             let level = band(f, i, gain)
-            let h = max(2, level * s.height * 0.51)
+            let h = max(2, level * s.height * (0.51 + audio.hit * 0.08))
             let x = s.width * 0.08 + Double(i) * gap
             let rect = CGRect(x: x, y: base - h, width: max(1, gap * 0.58), height: h)
             let path = Path(roundedRect: rect, cornerRadius: min(3, gap * 0.24))
@@ -567,7 +574,8 @@ enum VisualRenderer {
     }
     private static func orbit(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                               _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
-        let radius = min(s.width, s.height) * 0.24
+        let audio = f.response(gain)
+        let radius = min(s.width, s.height) * (0.22 + audio.bass * 0.04 + audio.hit * 0.02)
         let center = CGPoint(x: s.width / 2, y: s.height / 2)
         let count = Int(90 + detail * 90)
         for ring in 0..<3 {
@@ -575,7 +583,7 @@ enum VisualRenderer {
             for i in 0...count {
                 let theta = Double(i) / Double(count) * .pi * 2
                 let signal = band(f, Int(Double(i % count) / Double(count) * 63), gain)
-                let r = radius * (1 + Double(ring) * 0.22 + signal * 0.26)
+                let r = radius * (1 + Double(ring) * 0.22 + signal * 0.38)
                 let angle = theta + t * (ring % 2 == 0 ? 0.08 : -0.06)
                 let pt = CGPoint(x: center.x + cos(angle) * r, y: center.y + sin(angle) * r)
                 if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
@@ -596,6 +604,7 @@ enum VisualRenderer {
     }
     private static func waveform(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                                  _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double) {
+        let audio = f.response(gain)
         for layer in 0..<3 {
             var p = Path()
             for i in f.waveform.indices {
@@ -604,18 +613,19 @@ enum VisualRenderer {
                 let point = CGPoint(x: s.width * (0.05 + x * 0.9), y: s.height / 2 + amplitude + Double(layer - 1) * 9)
                 if i == 0 { p.move(to: point) } else { p.addLine(to: point) }
             }
-            trace(&c, p, color: colors[layer], width: layer == 0 ? 2.2 : 1.2, glow: glow,
+            trace(&c, p, color: colors[layer], width: layer == 0 ? 2.2 + audio.hit * 2 : 1.2, glow: glow,
                   opacity: layer == 0 ? 0.9 : 0.3)
         }
     }
     private static func tunnel(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                                _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double) {
+        let audio = f.response(gain)
         let center = CGPoint(x: s.width / 2, y: s.height / 2)
         for layer in 0..<18 {
             let progress = (Double(layer) / 18 + t * 0.055).truncatingRemainder(dividingBy: 1)
             let radius = pow(progress, 2) * max(s.width, s.height) * 0.75
             let rotation = t * 0.07 + (1 - progress) * 1.3
-            let scale = 1 + band(f, layer * 3, gain) * 0.1
+            let scale = 1 + band(f, layer * 3, gain) * 0.22 + audio.bass * 0.12 + audio.hit * 0.12
             var p = Path()
             for side in 0..<7 {
                 let angle = Double(side % 6) / 6 * .pi * 2 + rotation
@@ -624,11 +634,12 @@ enum VisualRenderer {
                 if side == 0 { p.move(to: point) } else { p.addLine(to: point) }
             }
             trace(&c, p, color: colors[layer % 3], width: 0.8 + progress,
-                  glow: glow * 0.7, opacity: sin(progress * .pi) * 0.7)
+                  glow: glow * 0.7, opacity: sin(progress * .pi) * (0.45 + audio.treble * 0.3 + audio.hit * 0.2))
         }
     }
     private static func constellation(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                                       _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        let audio = f.response(gain)
         let count = Int(28 + detail * 55)
         var points: [CGPoint] = []
         points.reserveCapacity(count)
@@ -638,7 +649,7 @@ enum VisualRenderer {
             let y = 0.5 + cos(seed * 311.7 + t * 0.033) * 0.4
             points.append(CGPoint(x: x * s.width, y: y * s.height))
         }
-        let threshold = min(s.width, s.height) * 0.22
+        let threshold = min(s.width, s.height) * (0.18 + audio.mid * 0.10)
         let thresholdSquared = threshold * threshold
         var dots = [Path(), Path(), Path()]
         for i in 0..<count {
@@ -651,7 +662,7 @@ enum VisualRenderer {
                     c.stroke(p, with: .color(colors[i % 3].opacity((1 - d / threshold) * 0.24)), lineWidth: 0.7)
                 }
             }
-            let r = 1 + band(f, i, gain) * 3.6
+            let r = 1 + band(f, i, gain) * 4.8 + audio.hit * 2
             let dot = Path(ellipseIn: CGRect(x: points[i].x - r, y: points[i].y - r, width: r * 2, height: r * 2))
             dots[i % 3].addPath(dot)
         }
@@ -666,6 +677,7 @@ enum VisualRenderer {
     }
     private static func terrain(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                                 _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        let audio = f.response(gain)
         let rows = Int(12 + detail * 15)
         for row in 0..<rows {
             let z = Double(row) / Double(rows)
@@ -675,7 +687,7 @@ enum VisualRenderer {
                 let x = Double(i) / 63
                 let ridge = band(f, i, gain) * (0.6 + 0.4 * sin(x * 12 + z * 7 + t * 0.3))
                 let point = CGPoint(x: s.width * (0.5 + (x - 0.5) * scale * 1.7),
-                                    y: s.height * (0.38 + z * 0.56 - ridge * scale * 0.25))
+                                    y: s.height * (0.38 + z * 0.56 - (ridge * 0.34 + audio.bass * 0.04 + audio.hit * 0.04) * scale))
                 if i == 0 { p.move(to: point) } else { p.addLine(to: point) }
             }
             trace(&c, p, color: colors[row % 3], width: 0.7 + z, glow: glow * 0.6, opacity: 0.12 + z * 0.58)
@@ -683,8 +695,9 @@ enum VisualRenderer {
     }
     private static func bloom(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
                               _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+        let audio = f.response(gain)
         let center = CGPoint(x: s.width / 2, y: s.height / 2)
-        let radius = min(s.width, s.height) * 0.28
+        let radius = min(s.width, s.height) * (0.25 + audio.bass * 0.045 + audio.hit * 0.025)
         for layer in 0..<Int(5 + detail * 7) {
             let l = Double(layer)
             var p = Path()
@@ -692,7 +705,7 @@ enum VisualRenderer {
                 let theta = Double(i) / 240 * .pi * 2
                 let signal = band(f, Int(Double(i) / 241 * 63), gain)
                 let petal = 0.65 + 0.2 * sin(theta * 6 + t * 0.3 + l * 0.13)
-                let r = radius * (petal + signal * 0.25) * (0.6 + l * 0.075)
+                let r = radius * (petal + signal * 0.40) * (0.6 + l * 0.075)
                 let angle = theta + t * 0.04 + l * 0.035
                 let point = CGPoint(x: center.x + cos(angle) * r, y: center.y + sin(angle) * r)
                 if i == 0 { p.move(to: point) } else { p.addLine(to: point) }

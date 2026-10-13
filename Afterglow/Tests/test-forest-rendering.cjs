@@ -5,6 +5,7 @@ const output=process.argv[2]||path.join(require('node:os').tmpdir(),'afterglow-f
 fs.mkdirSync(output,{recursive:true});
 const environment=vm.createContext({Math,rms:0,gain:1.25,glow:.6,detail:.65,
  palettes:{Glacier:['#55dcd9'],Ember:['#ff9760']},palette:'Glacier'});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../Web/app.js'),'utf8').split('// BEGIN AUDIO RESPONSE')[1].split('// END AUDIO RESPONSE')[0],environment);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../Web/forest-walk.js'),'utf8'),environment);
 const encounter=time=>vm.runInContext(`forestEncounter(${time})`,environment);
 const kinds=new Set(),sides=new Set();let quiet=0,visible=0;
@@ -17,11 +18,12 @@ for(let i=0;i<10000;i++){
 }
 assert.equal(kinds.size,4);assert.equal(sides.size,2);assert(quiet>1000&&visible>4000,'Encounters have visible windows and quiet gaps');
 for(const t of [0,10,1000000,NaN,Infinity,-5])assert.doesNotThrow(()=>encounter(t));
-function draw(canvas,time,small=false){environment.canvas=canvas;vm.runInContext(`renderForestWalk(canvas,${time},[],${small})`,environment);return canvas.toBuffer('image/png')}
+function draw(canvas,time,small=false){environment.canvas=canvas;environment.bands=Array(64).fill(.35);vm.runInContext(`renderForestWalk(canvas,${time},bands,${small})`,environment);return canvas.toBuffer('image/png')}
 const desktop=createCanvas(1200,760),still=draw(desktop,4);
 assert.deepEqual(draw(desktop,4),still,'Frozen clock produces identical pixels');
 assert.notDeepEqual(draw(desktop,5),still,'Walking and parallax animate');
-environment.rms=.5;assert.notDeepEqual(draw(desktop,4),still,'Light and foliage respond to input with motion frozen');
+environment.rms=.5;assert.notDeepEqual(draw(desktop,4),still,'Light and foliage respond to level with motion frozen');
+environment.rms=0;vm.runInContext('responseState.beat=1',environment);assert.notDeepEqual(draw(desktop,4),still,'Fireflies and sunbeams respond to attacks with motion frozen');vm.runInContext('resetResponse()',environment);
 environment.rms=0;environment.palette='Ember';assert.notDeepEqual(draw(desktop,4),still,'Palette changes firefly accents');environment.palette='Glacier';
 for(const [name,w,h] of [['desktop',1200,760],['phone',390,520],['ultrawide',1600,680],['thumbnail',264,156]]){
  const canvas=createCanvas(w,h);fs.writeFileSync(path.join(output,`forest-${name}.png`),draw(canvas,4,name==='thumbnail'));

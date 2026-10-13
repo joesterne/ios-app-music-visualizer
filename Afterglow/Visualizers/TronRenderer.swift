@@ -6,10 +6,12 @@ enum TronRenderer {
         var c = context
         let bounds = CGRect(origin: .zero, size: size)
         let color = palette.color
-        let energy = min(1, max(0, Double(frame.rms) * sensitivity * 3))
+        let audio = frame.response(sensitivity)
+        let energy = min(1, audio.energy * 0.35 + audio.bass * 0.4 + audio.hit * 0.65)
+        let glow = min(1, glow * (0.75 + audio.treble * 0.5 + audio.hit * 0.4))
         c.fill(Path(bounds), with: .color(Color(hex: 0x030910)))
         c.fill(Path(bounds), with: .radialGradient(
-            Gradient(colors: [color.opacity(0.065 + energy * 0.05), .clear]),
+            Gradient(colors: [color.opacity(0.065 + energy * 0.14), .clear]),
             center: CGPoint(x: size.width / 2, y: size.height / 2), startRadius: 0,
             endRadius: max(size.width, size.height) * 0.65))
         c.blendMode = .plusLighter
@@ -62,7 +64,7 @@ enum TronRenderer {
         let scale = max(0.5, unit / 350)
         let map: (TronPoint) -> CGPoint = { CGPoint(x: $0.x * size.width, y: $0.y * size.height) }
         for index in 0..<(detail > 0.55 ? 4 : 3) {
-            let trail = TronGeometry.cycleTrail(index: index, time: time, trailLength: 0.68)
+            let trail = TronGeometry.cycleTrail(index: index, time: time, trailLength: 0.48 + energy * 0.40)
             neon(&c, path: path(trail, transform: map), color: color,
                  width: (2 + energy * 2.2) * scale, glow: glow, opacity: 0.62 + Double(index) * 0.09)
             let pose = TronGeometry.cyclePose(index: index, time: time)
@@ -87,7 +89,7 @@ enum TronRenderer {
     private static func discs(_ c: inout GraphicsContext, size: CGSize, color: Color,
                               time: Double, energy: Double, glow: Double, detail: Double) {
         let unit = min(size.width, size.height)
-        let radius = unit * (0.065 + energy * 0.014)
+        let radius = unit * (0.055 + energy * 0.035)
         let aspect = size.width / size.height
         for index in 0..<(detail > 0.55 ? 4 : 3) {
             let position = TronGeometry.discPosition(index: index, time: time, aspect: aspect, radius: 0.10)
@@ -143,7 +145,7 @@ enum TronRenderer {
             pulses.addEllipse(in: CGRect(x: p.x - 1.5, y: p.y - 1.5, width: 3, height: 3))
         }
         // Batch glow into one pass rather than blurring every circuit segment.
-        neon(&c, path: allTraces, color: color, width: 0.9 + energy * 0.8, glow: glow, opacity: 0.65)
+        neon(&c, path: allTraces, color: color, width: 0.9 + energy * 2.2, glow: glow, opacity: 0.65)
         c.stroke(terminals, with: .color(color.opacity(0.65)), lineWidth: 1)
         c.fill(pulses, with: .color(.white.opacity(0.55 + energy * 0.4)))
         let chipSize = min(size.width, size.height) * 0.075

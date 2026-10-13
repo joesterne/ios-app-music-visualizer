@@ -9,7 +9,13 @@ struct AudioFrame: Sendable {
     var bass: Float = 0
     var mid: Float = 0
     var treble: Float = 0
+    var beat: Float = 0
     static let silent = AudioFrame()
+
+    func response(_ sensitivity: Double) -> AudioResponse {
+        AudioResponse(rms: Double(rms), bass: Double(bass), mid: Double(mid),
+                      treble: Double(treble), beat: Double(beat), sensitivity: sensitivity)
+    }
 
     static func ambient(at time: Double, includeWaveform: Bool = true) -> AudioFrame {
         var frame = AudioFrame()
@@ -52,7 +58,7 @@ final class AudioAnalyzer: @unchecked Sendable {
     func snapshot() -> AudioFrame {
         var frame = AudioFrame()
         var levels = [Float](repeating: 0, count: 5)
-        AGAnalyzerCopyFrame(handle, &frame.bands, &frame.waveform, &levels)
+        AGAnalyzerCopyReactiveFrame(handle, &frame.bands, &frame.waveform, &levels, &frame.beat)
         frame.rms = levels[0]; frame.peak = levels[1]
         frame.bass = levels[2]; frame.mid = levels[3]; frame.treble = levels[4]
         return frame

@@ -37,6 +37,44 @@ static void checkTone(double rate, double frequency) {
     free(input); AGAnalyzerDestroy(a);
 }
 typedef struct { AGAnalyzer *a; float *samples; } Shared;
+static void checkAttacks(double rate) {
+    AGAnalyzer *a = AGAnalyzerCreate(); assert(a);
+    float input[1024], beat = 0, levels[5], bands[64];
+    size_t offset = 0;
+    /* Repeated kicks must recover between hits, at every supported music rate. */
+    for (int hit = 0; hit < 3; hit++) {
+        float strongest = 0;
+        int blocks = (int)ceil(rate * .10 / 1024);
+        for (int block = 0; block < blocks; block++) {
+            for (int i = 0; i < 1024; i++, offset++) input[i] = .25f * sin(2 * PI * 90 * offset / rate);
+            AGAnalyzerPushPlanar(a, input, NULL, 1024, rate);
+            AGAnalyzerCopyReactiveFrame(a, bands, NULL, levels, &beat);
+            valid(&beat, 1, 0); strongest = fmaxf(strongest, beat);
+        }
+        assert(strongest > .65f);
+        for (int i = 0; i < 1024; i++) input[i] = 0;
+        for (int block = 0; block < (int)ceil(rate * .60 / 1024); block++)
+            AGAnalyzerPushPlanar(a, input, NULL, 1024, rate);
+        AGAnalyzerCopyReactiveFrame(a, bands, NULL, levels, &beat);
+        assert(beat < .025f);
+        for (int i = 0; i < 64; i++) assert(bands[i] < .01f);
+    }
+    for (int block = 0; block < (int)ceil(rate * 1.5 / 1024); block++) {
+        for (int i = 0; i < 1024; i++, offset++) input[i] = .25f * sin(2 * PI * 440 * offset / rate);
+        AGAnalyzerPushPlanar(a, input, NULL, 1024, rate);
+    }
+    AGAnalyzerCopyReactiveFrame(a, NULL, NULL, levels, &beat);
+    assert(levels[0] > .1f && beat < .01f); // Held notes are not repeated attacks.
+    AGAnalyzerReset(a);
+    AGAnalyzerCopyReactiveFrame(a, NULL, NULL, NULL, &beat); assert(beat == 0);
+    for (int i = 0; i < 1024; i++) input[i] = .002f;
+    for (int i = 0; i < 8; i++) AGAnalyzerPushPlanar(a, input, NULL, 1024, rate);
+    AGAnalyzerCopyReactiveFrame(a, NULL, NULL, NULL, &beat); assert(beat == 0);
+    // A rate change must discard the previous envelope, too.
+    AGAnalyzerPushPlanar(a, input, NULL, 1, rate == 48000 ? 44100 : 48000);
+    AGAnalyzerCopyReactiveFrame(a, NULL, NULL, NULL, &beat); assert(beat == 0);
+    AGAnalyzerDestroy(a);
+}
 static void *writer(void *raw) {
     Shared *s = raw;
     for (int i = 0; i < 200; i++) AGAnalyzerPushPlanar(s->a, s->samples, NULL, 1024, 48000);
@@ -46,6 +84,7 @@ int main(void) {
     const double rates[] = {8000, 44100, 48000, 96000};
     for (int i = 0; i < 4; i++) { checkTone(rates[i], 440); checkTone(rates[i], 2200); }
     checkTone(48000, 90); checkTone(48000, 10000);
+    checkAttacks(44100); checkAttacks(48000); checkAttacks(96000);
     AGAnalyzer *a = AGAnalyzerCreate(), *b = AGAnalyzerCreate();
     float *mono = calloc(COUNT, sizeof(float));
     float *stereo = calloc(COUNT * 2, sizeof(float));
@@ -79,11 +118,13 @@ int main(void) {
     Shared shared = {a, mono}; pthread_t thread;
     assert(pthread_create(&thread, NULL, writer, &shared) == 0);
     for (int i = 0; i < 200; i++) {
-        AGAnalyzerCopyFrame(a, bands, wave, levels); valid(bands, 64, 0); valid(levels, 5, 0);
+        float beat;
+        AGAnalyzerCopyReactiveFrame(a, bands, wave, levels, &beat);
+        valid(bands, 64, 0); valid(levels, 5, 0); valid(&beat, 1, 0);
         if (i % 25 == 0) AGAnalyzerReset(a);
     }
     pthread_join(thread, NULL);
     AGAnalyzerDestroy(a); AGAnalyzerDestroy(b); free(mono); free(stereo);
-    puts("PASS: tone frequency/RMS at four rates; silence; stereo formats; reset; non-finite input; concurrent snapshots.");
+    puts("PASS: tone frequency/RMS; silence; stereo; non-finite input; concurrent snapshots; repeated attacks, held notes, noise gate, decay and reset at 44.1/48/96 kHz.");
     return 0;
 }

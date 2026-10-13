@@ -5,6 +5,7 @@ const output=process.argv[2]||path.join(require('node:os').tmpdir(),'afterglow-m
 fs.mkdirSync(output,{recursive:true});
 const environment=vm.createContext({Math,Number,parseInt,rms:0,gain:1.25,glow:.6,detail:.65,
  palettes:{Glacier:['#55dcd9'],Ember:['#ff9760']},palette:'Glacier'});
+vm.runInContext(fs.readFileSync(path.join(__dirname,'../Web/app.js'),'utf8').split('// BEGIN AUDIO RESPONSE')[1].split('// END AUDIO RESPONSE')[0],environment);
 vm.runInContext(fs.readFileSync(path.join(__dirname,'../Web/minecraft.js'),'utf8'),environment);
 const column=c=>vm.runInContext(`minecraftColumn(${c})`,environment);
 const ore=(c,d)=>vm.runInContext(`minecraftOre(${c},${d})`,environment);
@@ -22,12 +23,13 @@ assert.equal(heights.size,6);assert.equal(ores.size,5,'All five ores appear');
 assert(trees>1500&&torches>800&&creepers>300,'Trees, torches and creepers recur');
 for(const c of [NaN,Infinity,-5,1e9])assert.doesNotThrow(()=>column(c));
 const bands=Array.from({length:64},()=>.6),silent=Array(64).fill(0);
-function draw(canvas,time,input=silent,small=false){environment.canvas=canvas;environment.bands=input;vm.runInContext(`renderMinecraft(canvas,${time},bands,${small})`,environment);return canvas.toBuffer('image/png')}
+function draw(canvas,time,input=silent,small=false,hit=0){environment.canvas=canvas;environment.bands=input;vm.runInContext(`resetResponse();responseState.beat=${hit}`,environment);vm.runInContext(`renderMinecraft(canvas,${time},bands,${small})`,environment);return canvas.toBuffer('image/png')}
 const desktop=createCanvas(1200,760),still=draw(desktop,4);
 assert.deepEqual(draw(desktop,4),still,'Frozen clock produces identical pixels');
 assert.notDeepEqual(draw(desktop,5),still,'Terrain scrolls and the miner walks');
 assert.notDeepEqual(draw(desktop,4,bands),still,'Ore glow responds to bands with motion frozen');
 environment.rms=.5;assert.notDeepEqual(draw(desktop,4),still,'Pickaxe, torches and orbs respond to level with motion frozen');environment.rms=0;
+const attack=draw(desktop,4,bands,false,1);assert.notDeepEqual(attack,draw(desktop,4,bands),'Torches and pickaxe respond to attacks with motion frozen');
 environment.palette='Ember';assert.notDeepEqual(draw(desktop,4),still,'Palette tints experience orbs');environment.palette='Glacier';
 const brightness=time=>{draw(desktop,time);const data=desktop.getContext('2d').getImageData(0,0,1200,200).data;let sum=0;for(let i=0;i<data.length;i+=4)sum+=data[i]+data[i+1]+data[i+2];return sum/(data.length/4)};
 assert(brightness(0)>brightness(60)*2,'Day sky is brighter than night sky');

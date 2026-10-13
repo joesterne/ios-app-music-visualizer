@@ -19,6 +19,10 @@ void AGAnalyzerPushInterleaved(AGAnalyzer *analyzer, const float *samples,
    levels: linear RMS, peak, bass, mid, treble. Bands/levels: 0...1; waveform: -1...1.
    All outputs are finite. Stop all callers before destroying the analyzer. */
 void AGAnalyzerCopyFrame(AGAnalyzer *analyzer, float *bands, float *waveform, float *levels);
+/* Same coherent snapshot plus a gated musical-attack envelope, 0...1.
+   This is onset strength, not tempo/BPM detection. The five levels are unchanged. */
+void AGAnalyzerCopyReactiveFrame(AGAnalyzer *analyzer, float *bands, float *waveform,
+                                 float *levels, float *beat);
 #ifdef __cplusplus
 }
 #endif

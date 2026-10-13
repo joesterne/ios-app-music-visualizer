@@ -3,7 +3,8 @@ const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm'),asse
 const {createCanvas}=require('@napi-rs/canvas');
 const output=process.argv[2]||path.join(require('node:os').tmpdir(),'afterglow-fallout');
 const source=fs.readFileSync(path.join(__dirname,'../Web/app.js'),'utf8').split('// BEGIN FALLOUT RENDERER')[1].split('// END FALLOUT RENDERER')[0];
-const environment=vm.createContext({Math,rms:0,gain:1.25,glow:.6,detail:.65});vm.runInContext(source,environment);
+const environment=vm.createContext({Math,rms:0,gain:1.25,glow:.6,detail:.65});vm.runInContext(fs.readFileSync(path.join(__dirname,'../Web/app.js'),'utf8').split('// BEGIN AUDIO RESPONSE')[1].split('// END AUDIO RESPONSE')[0],environment);
+vm.runInContext(source,environment);
 const bands=new Float32Array(64);environment.bands=bands;
 function draw(canvas,time,small=false){environment.canvas=canvas;vm.runInContext(`renderFallout(canvas,${time},bands,${small})`,environment);return canvas.toBuffer('image/png')}
 fs.mkdirSync(output,{recursive:true});
