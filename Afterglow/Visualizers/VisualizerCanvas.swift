@@ -54,13 +54,15 @@ struct VisualizerCanvas: View, Equatable {
             }
         }
         .clipped()
+        // The studio owns shared-clock synchronization. Duo may briefly host both
+        // layout branches during a pose transition; canvas lifecycle callbacks must
+        // never race each other by pausing or restarting that shared clock.
         .onAppear {
-            if let clock { clock.setSpeed(settings.speed); clock.setPaused(stopped) }
-            else if stopped { frozen = 0 }
+            guard clock == nil else { return }
+            if stopped { frozen = 0 }
         }
-        .onChange(of: settings.speed) { _, value in clock?.setSpeed(value) }
         .onChange(of: stopped) { _, value in
-            if let clock { clock.setPaused(value); return }
+            guard clock == nil else { return }
             if value { frozen = Date().timeIntervalSince(origin) }
             else if let frozen { origin = Date().addingTimeInterval(-frozen); self.frozen = nil }
         }
