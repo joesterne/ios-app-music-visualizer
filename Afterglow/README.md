@@ -125,6 +125,8 @@ The project includes `NSAppleMusicUsageDescription`. Enabling the runtime settin
 
 Use **React to audio** beneath the stage to switch between measured audio response and independent animation without stopping playback or disconnecting an input. Use Save preferences locally to retain the preference. Audio response requires a supported input (imported audio, microphone, or native Mac system capture); streaming companions continue to use ambient motion. The horizontal control below the gallery lets you browse all seventeen visualizers.
 
+With a supported audio input, frequency bands shape each scene and brief signal attacks add a short pulse to geometry and light. The attack fades on its own, so held notes do not stay maxed out; sensitivity retains useful range on loud tracks. Music response continues when visual motion is paused or Reduce Motion is enabled. Scene thumbnails remain static previews.
+
 Rendering reuses cached Halo depth orders and browser frequency-bin ranges. The browser skips visual analysis and rendering while hidden or uses ambient animation when independent; native independent mode avoids publishing analyzer frames unless the source meters are visible. These are reductions in repeated work; no device-specific frame-rate improvement has been measured.
 
 Validated September 24: browser regression tests (including playback continuity, response switching, gallery synchronization, and hidden-page analysis), settings migration/round-trip and geometry tests, DSP tests, and unsigned macOS/iOS Simulator builds passed.

@@ -16,7 +16,7 @@ function forestEncounter(time) {
 function renderForestWalk(canvas,time,bands,small=false) {
  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,U=Math.min(W,H);
  if(W<=1||H<=1)return;
- const t=Math.max(0,Number.isFinite(time)?time:0),energy=Math.min(1,Math.max(0,rms*gain*3));
+ const t=Math.max(0,Number.isFinite(time)?time:0),response=musicResponse(bands,small),energy=response.energy;
  const quality=small?.3:detail,accent=palettes[palette][0];
  ctx.save();ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;
  const polygon=(points,color,alpha=1)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=color;ctx.globalAlpha=alpha;ctx.fill()};
@@ -41,7 +41,7 @@ function renderForestWalk(canvas,time,bands,small=false) {
   for(const side of [-1,1]){
    const seed=row*13+(side+1)*17,x=W*(.5+side*(.07+depth*(.52+forestRandom(seed)*.3)));
    const y=H*(.39+depth*.69),height=H*(.16+depth*.76),width=U*(.014+depth*.043);
-   const sway=Math.sin(t*.6+seed)*U*.004*(1+energy*.4);
+   const sway=Math.sin(t*.6+seed)*U*.004*(1+energy*.4+response.bass*.5+response.hit*.3);
    line([[x,y],[x+sway,y-height]],depth>.45?'#172f29':'#36594a',width);
    line([[x-width*.22,y],[x+sway-width*.22,y-height]],'#99a775',Math.max(1,width*.12),.22);
    for(let tier=0;tier<3;tier++){
@@ -51,7 +51,7 @@ function renderForestWalk(canvas,time,bands,small=false) {
    }
   }
  }
- for(let i=0;i<4;i++)polygon([[W*(.45+i*.05),0],[W*(.48+i*.055),0],[W*(.19+i*.24),H*.86],[W*(.08+i*.24),H*.86]],'#ffe8a3',(.024+energy*.025)*glow);
+ for(let i=0;i<4;i++)polygon([[W*(.45+i*.05),0],[W*(.48+i*.055),0],[W*(.19+i*.24),H*.86],[W*(.08+i*.24),H*.86]],'#ffe8a3',(.024+energy*.025+response.hit*.04+response.treble*.02)*glow);
  // Ferns and stones remain outside the center of the walking path.
  for(let i=0;i<Math.floor(12+quality*24);i++){
   const z=(forestRandom(i+260)+t*.045)%1,d=z*z,side=i%2?-1:1;
@@ -103,7 +103,7 @@ function renderForestWalk(canvas,time,bands,small=false) {
  for(let i=0;i<Math.floor(8+quality*24);i++){
   const fx=W*(.08+forestRandom(i+400)*.84)+Math.sin(t*.45+i)*U*.018;
   const fy=H*(.3+forestRandom(i+460)*.53)+Math.cos(t*.6+i)*U*.014;
-  ellipse(fx,fy,U*(.0015+energy*.0012),U*(.0015+energy*.0012),accent,(.3+.7*Math.pow(Math.sin(t+i),2))*(.4+glow*.6));
+  ellipse(fx,fy,U*(.0015+energy*.0012+response.hit*.0018),U*(.0015+energy*.0012+response.hit*.0018),accent,(.25+.6*Math.pow(Math.sin(t+i),2)+response.treble*.15+response.hit*.25)*(.4+glow*.6));
  }
  ctx.restore();
 }

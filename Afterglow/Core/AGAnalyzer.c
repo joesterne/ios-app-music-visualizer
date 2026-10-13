@@ -18,6 +18,8 @@ struct AGAnalyzer {
     float publishedBands[AG_BANDS], publishedWave[AG_WAVEFORM], publishedLevels[5];
     size_t cursor, count, hop;
     double rate;
+    float baseline, beat, publishedBeat;
+    float attackBlend, releaseBlend, baselineBlend, beatDecay;
 };
 static float clamp01(float x) { return fminf(1, fmaxf(0, x)); }
 AGAnalyzer *AGAnalyzerCreate(void) {
@@ -58,6 +60,7 @@ static void publishUnlocked(AGAnalyzer *a) {
     memcpy(a->publishedBands, a->bands, sizeof(a->bands));
     memcpy(a->publishedWave, a->wave, sizeof(a->wave));
     memcpy(a->publishedLevels, a->levels, sizeof(a->levels));
+    a->publishedBeat = a->beat;
 }
 static void resetUnlocked(AGAnalyzer *a) {
     memset(a->ring, 0, sizeof(a->ring));
@@ -65,6 +68,7 @@ static void resetUnlocked(AGAnalyzer *a) {
     memset(a->wave, 0, sizeof(a->wave));
     memset(a->levels, 0, sizeof(a->levels));
     a->cursor = a->count = a->hop = 0;
+    a->baseline = a->beat = 0;
     pthread_mutex_lock(&a->frameMutex);
     publishUnlocked(a);
     pthread_mutex_unlock(&a->frameMutex);
@@ -74,6 +78,12 @@ void AGAnalyzerReset(AGAnalyzer *a) {
     pthread_mutex_lock(&a->inputMutex); resetUnlocked(a); pthread_mutex_unlock(&a->inputMutex);
 }
 static void configureBands(AGAnalyzer *a) {
+    /* Time constants keep response consistent across input sample rates. */
+    double dt = HOP / a->rate;
+    a->attackBlend = 1 - exp(-dt / .012);
+    a->releaseBlend = 1 - exp(-dt / .085);
+    a->baselineBlend = 1 - exp(-dt / .180);
+    a->beatDecay = exp(-dt / .140);
     double upper = fmin(16000, a->rate * .48);
     memset(a->zoneCounts, 0, sizeof(a->zoneCounts));
     for (int b = 0; b < AG_BANDS; b++) {
@@ -118,11 +128,18 @@ static void transform(AGAnalyzer *a) {
         /* sqrt(max(power)) equals max(magnitude): one root per band, not per bin. */
         float magnitude = sqrtf(power) * (4.f / N);
         float target = clamp01((20 * log10f(fmaxf(1e-7f, magnitude)) + 72) / 72);
-        float blend = target > a->bands[b] ? .72f : .16f;
+        float blend = target > a->bands[b] ? a->attackBlend : a->releaseBlend;
         a->bands[b] += blend * (target - a->bands[b]);
         sums[a->zone[b]] += a->bands[b];
     }
     a->levels[0] = clamp01(sqrtf(energy / N)); a->levels[1] = clamp01(peak);
+    /* Relative onset, with a quiet-input gate. A held note settles instead of
+       becoming a permanent beat; decay is independent of the visual clock. */
+    float rms = a->levels[0];
+    float onset = clamp01((rms - a->baseline * 1.25f) / (a->baseline + .035f));
+    onset *= clamp01((rms - .004f) / .035f);
+    a->beat = fmaxf(onset, a->beat * a->beatDecay);
+    a->baseline += a->baselineBlend * (rms - a->baseline);
     for (int i = 0; i < 3; i++) a->levels[i + 2] = a->zoneCounts[i] ? sums[i] / a->zoneCounts[i] : 0;
     /* A display reader must never make the FFT producer wait. Keep the previous
        complete display frame if a copy is in progress; publish at the next hop. */
@@ -161,10 +178,14 @@ void AGAnalyzerPushInterleaved(AGAnalyzer *a, const float *samples,
     pthread_mutex_unlock(&a->inputMutex);
 }
 void AGAnalyzerCopyFrame(AGAnalyzer *a, float *bands, float *waveform, float *levels) {
+    AGAnalyzerCopyReactiveFrame(a, bands, waveform, levels, NULL);
+}
+void AGAnalyzerCopyReactiveFrame(AGAnalyzer *a, float *bands, float *waveform, float *levels, float *beat) {
     if (!a) return;
     pthread_mutex_lock(&a->frameMutex);
     if (bands) memcpy(bands, a->publishedBands, sizeof(a->bands));
     if (waveform) memcpy(waveform, a->publishedWave, sizeof(a->wave));
     if (levels) memcpy(levels, a->publishedLevels, sizeof(a->levels));
+    if (beat) *beat = a->publishedBeat;
     pthread_mutex_unlock(&a->frameMutex);
 }

@@ -22,6 +22,8 @@ trap 'rm -rf "$test_directory"' EXIT
 xcrun swiftc -parse-as-library App/Models.swift Visualizers/TronSettings.swift Visualizers/VisualizerClock.swift \
   Services/PreferenceStore.swift Tests/test-native-preferences.swift -o "$test_directory/preferences-test"
 "$test_directory/preferences-test"
+xcrun swiftc -parse-as-library Audio/AudioResponse.swift Tests/test-audio-response.swift -o "$test_directory/audio-response-test"
+"$test_directory/audio-response-test"
 xcodebuild -project Afterglow.xcodeproj -scheme Afterglow-Mac -configuration Debug \
   -destination 'generic/platform=macOS' -derivedDataPath .build/Mac \
   CODE_SIGNING_ALLOWED=NO build

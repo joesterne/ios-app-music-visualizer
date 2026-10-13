@@ -13,6 +13,7 @@ const context=vm.createContext({Path2D,Math,palettes,palette:'Ultraviolet',rms:.
  yosemiteLandscape:await loadImage(path.join(root,'Assets.xcassets/YosemiteLandscape.imageset/YosemiteLandscape.png')),
  yosemiteCloud:await loadImage(path.join(root,'Assets.xcassets/YosemiteCloud.imageset/YosemiteCloud.png')),
  document:{createElement(){caches++;return createCanvas(1,1)}}});
+vm.runInContext(html.split('// BEGIN AUDIO RESPONSE')[1].split('// END AUDIO RESPONSE')[0],context);
 vm.runInContext(code,context);
 const draw=(canvas,t,small=false)=>{context.target=canvas;vm.runInContext(`renderYosemite(target,${t},${small})`,context);return canvas.toBuffer('image/png')};
 fs.mkdirSync(output,{recursive:true});

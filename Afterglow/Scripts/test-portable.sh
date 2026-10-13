@@ -14,4 +14,5 @@ node Tests/test-yosemite-rendering.cjs "$render_directory"
 node Tests/test-fallout-rendering.cjs "$render_directory"
 node Tests/test-forest-rendering.cjs "$render_directory"
 node Tests/test-minecraft-rendering.cjs "$render_directory"
+node Tests/test-audio-reactivity.cjs "$render_directory"
 bash Scripts/test-dsp.sh
