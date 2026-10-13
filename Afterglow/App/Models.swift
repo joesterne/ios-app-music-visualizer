@@ -118,6 +118,29 @@ enum VisualPalette: String, CaseIterable, Identifiable, Codable {
     var accent: Color { colors[0] }
 }
 
+extension VisualizerStyle {
+    var supportsCustomization: Bool {
+        switch self {
+        case .aurora, .spectrum, .orbit, .waveform, .tunnel, .constellation, .terrain, .bloom, .tron, .halo, .ironMan: true
+        default: false
+        }
+    }
+}
+
+struct VisualizerCustomization: Codable, Equatable {
+    var colors: [UInt32]? = nil
+    var speed: Double? = nil
+    var size: Double = 1
+
+    func validated() -> Self {
+        var value = self
+        if let colors, colors.count != 3 || colors.contains(where: { $0 > 0xFFFFFF }) { value.colors = nil }
+        if let speed { value.speed = speed.isFinite ? min(2, max(0.1, speed)) : nil }
+        value.size = size.isFinite ? min(1.5, max(0.5, size)) : 1
+        return value
+    }
+}
+
 struct VisualSettings: Codable, Equatable {
     var style: VisualizerStyle = .aurora
     var palette: VisualPalette = .ultraviolet
@@ -130,14 +153,32 @@ struct VisualSettings: Codable, Equatable {
     var favorites: [VisualizerStyle] = [.aurora, .orbit]
     var tronMode: TronMode = .lightCycles
     var tronPalette: TronPalette = .lightBlue
-    var accent: Color { style == .tron ? tronPalette.color : palette.accent }
+    var customizations: [String: VisualizerCustomization] = [:]
+    func customization(for style: VisualizerStyle) -> VisualizerCustomization {
+        style.supportsCustomization ? (customizations[style.rawValue] ?? .init()) : .init()
+    }
+    var motionSpeed: Double {
+        get { customization(for: style).speed ?? speed }
+        set {
+            if style.supportsCustomization {
+                var value = customization(for: style); value.speed = newValue
+                customizations[style.rawValue] = value.validated()
+            } else { speed = newValue }
+        }
+    }
+    func defaultColors(for style: VisualizerStyle) -> [Color] {
+        if style == .tron { return Array(repeating: tronPalette.color, count: 3) }
+        if style == .ironMan { return [Color(hex: 0x75E8FF), Color(hex: 0xFF493B), Color(hex: 0xFFD080)] }
+        return palette.colors
+    }
+    var accent: Color { customization(for: style).colors?.first.map { Color(hex: $0) } ?? (style == .tron ? tronPalette.color : palette.accent) }
     var visualTitle: String { style == .tron ? tronMode.title : style.title }
     var visualSubtitle: String { style == .tron ? "TRON · \(tronPalette.title) · \(tronMode.subtitle)" : style.subtitle }
 
     init() {}
 
     private enum CodingKeys: String, CodingKey {
-        case style, palette, sensitivity, speed, glow, detail, fps, audioReactive, favorites, tronMode, tronPalette
+        case style, palette, sensitivity, speed, glow, detail, fps, audioReactive, favorites, tronMode, tronPalette, customizations
     }
 
     init(from decoder: Decoder) throws {
@@ -154,6 +195,8 @@ struct VisualSettings: Codable, Equatable {
         favorites = (try? values.decode([VisualizerStyle].self, forKey: .favorites)) ?? [.aurora, .orbit]
         tronMode = (try? values.decode(TronMode.self, forKey: .tronMode)) ?? .lightCycles
         tronPalette = (try? values.decode(TronPalette.self, forKey: .tronPalette)) ?? .lightBlue
+        let saved = (try? values.decode([String: VisualizerCustomization].self, forKey: .customizations)) ?? [:]
+        customizations = saved.filter { VisualizerStyle(rawValue: $0.key)?.supportsCustomization == true }.mapValues { $0.validated() }
     }
     static func load() -> VisualSettings {
         guard let data = UserDefaults.standard.data(forKey: "visualSettings.v1"),
@@ -166,6 +209,7 @@ struct VisualSettings: Codable, Equatable {
         value.speed = value.speed.isFinite ? min(2, max(0.1, value.speed)) : 0.65
         value.glow = value.glow.isFinite ? min(1, max(0, value.glow)) : 0.6
         value.detail = value.detail.isFinite ? min(1, max(0.2, value.detail)) : 0.65
+        value.customizations = value.customizations.filter { VisualizerStyle(rawValue: $0.key)?.supportsCustomization == true }.mapValues { $0.validated() }
         value.fps = value.fps == 30 ? 30 : 60
         var seen = Set<VisualizerStyle>()
         value.favorites = value.favorites.filter { seen.insert($0).inserted }

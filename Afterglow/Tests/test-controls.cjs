@@ -35,6 +35,29 @@ async function fixture(storage=new Map()){
  for(const card of d.querySelectorAll('.card')){card.click();check(run('style')===card.dataset.style,'visualizer '+card.dataset.style);check(card.getAttribute('aria-pressed')==='true','selected visualizer announced')}
  for(const button of d.querySelectorAll('.palette')){button.click();check(run('palette')===button.dataset.palette,'full palette '+button.dataset.palette)}
  for(const button of d.querySelectorAll('[data-duo-palette]')){button.click();check(run('palette')===button.dataset.duoPalette,'quick palette '+button.dataset.duoPalette)}
+ // Each supported scene owns its colors, speed, and size; non-target scenes stay unchanged.
+ for(const visual of run('customizableStyles')){
+  run(`pickStyle('${visual}')`);check(!d.getElementById('visual-customization').hidden,'customization visible for '+visual);
+  d.getElementById('custom-colors').checked=true;await event('custom-colors','change');
+  await event('scene-color-0','input','#21ac68');await event('scene-speed','input',1.45);await event('scene-size','input',.75);
+  check(run('customization().colors[0]')==='#21ac68'&&run('sceneSpeed()')===1.45&&run('customization().size')===.75,'controls update '+visual);
+  check(Number(d.getElementById('speed').value)===1.45&&Number(d.getElementById('duo-speed').value)===1.45,'speed controls synchronized '+visual);
+ }
+ run("pickStyle('minecraft')");check(d.getElementById('visual-customization').hidden,'Minecraft remains outside customization scope');
+ run("pickStyle('aurora')");await event('scene-size','input',1.3);run("pickStyle('halo')");
+ check(run('customization().size')===.75,'Aurora size does not change Halo');
+ click('#save-preferences');click('#reset-preferences');click('#restore-preferences');
+ check(run("customizations.aurora.size")===1.3&&run("customizations.halo.colors[0]")==='#21ac68','per-scene settings save and restore');
+ run("pickStyle('aurora');paused=true;time=42");await event('scene-speed','input',.2);tick();
+ check(run('time')===42,'speed change keeps a paused frame fixed');
+ run('paused=false;last=0;lastDraw=null;requestRender()');tick();const slowStart=run('time');tick();const slowDelta=run('time')-slowStart;
+ await event('scene-speed','input',1.6);const fastStart=run('time');tick();const fastDelta=run('time')-fastStart;
+ check(Math.abs(fastDelta/slowDelta-8)<.0001,'scene speed changes clock rate without a phase jump');
+ check(run('audio.paused'),'visual speed never starts audio playback');
+ click('#reset-visual-customization');check(!run('customizations.aurora')&&run('customizations.halo.size')===.75,'reset only selected visualizer');
+ run("const invalid=normalizePreferences({version:1,customizations:{halo:{colors:['bad'],size:99,speed:-8},minecraft:{size:1.5}}});window.cleaned=invalid.customizations");
+ check(w.cleaned.halo.colors===null&&w.cleaned.halo.size===1.5&&w.cleaned.halo.speed===.1&&!w.cleaned.minecraft,'untrusted preference values sanitized');
+ click('#reset-preferences');run("pickStyle('minecraft')");
  const wasFavorite=run('favorites.has(style)');click('#favorite');check(run('favorites.has(style)')!==wasFavorite,'favorite toggles');click('#favorite');
  await event('gain','input',2.1);await event('speed','input',1.2);await event('glow','input',.8);await event('detail','input',.9);await event('fps','change','30');await event('volume','input',.42);
  await event('duo-speed','input',.85);check(run('speed')===.85&&Number(d.getElementById('speed').value)===.85,'quick/full speed stay in sync');

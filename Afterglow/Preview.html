@@ -51,6 +51,16 @@ body.immersive .stage{height:100dvh;width:100dvw}
 #palettes[hidden],#tron-palette-note[hidden]{display:none}.tron-controls{margin:16px 0 22px;padding:16px;border:1px solid var(--accent);border-radius:14px;background:#0b151e;display:flex;flex-wrap:wrap;gap:14px;align-items:center}.tron-controls[hidden]{display:none}.tron-controls .micro{color:var(--accent)}.tron-controls select{background:#101c27;color:#eff0f7;border:1px solid #ffffff24;padding:10px;border-radius:8px;min-height:44px}.tron-colors{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.tron-colors button{font-size:11px;min-height:44px;padding:8px 12px;border:1px solid transparent;border-radius:22px;display:flex;align-items:center;gap:7px}.tron-colors button[aria-pressed=true]{border-color:var(--accent);background:#ffffff0b}.tron-colors button[aria-pressed=true]:after{content:'✓'}.tron-colors i{display:block;width:12px;height:12px;border-radius:50%}select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}@media(max-width:760px){.tron-colors{margin-left:0}.tron-controls{gap:10px}.tron-controls select{margin-left:auto;max-width:70%}}
 
 .response-controls{display:flex;align-items:center;gap:16px;margin-top:18px;flex-wrap:wrap}.response-controls .note{margin:0}
+
+.visual-customization{margin:18px 0;padding:18px;border:1px solid var(--line,#ffffff18);border-radius:16px;background:#11141f}
+.visual-customization[hidden],.scene-colors label[hidden]{display:none}
+.customization-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.customization-heading h3{font-size:16px;margin:0;font-weight:500}.customization-heading button{font-size:12px;padding:10px;border:1px solid #ffffff22;border-radius:8px}
+.custom-color-toggle{display:flex;align-items:center;gap:8px;margin:16px 0;font-size:13px}
+.scene-colors{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px}.scene-colors label{display:flex;align-items:center;gap:8px;font-size:12px}
+.scene-colors input[type=color]{width:44px;height:36px;padding:2px;border:1px solid #ffffff22;border-radius:6px;background:transparent;cursor:pointer}
+.scene-colors input:disabled{opacity:.35;cursor:default}.scene-sliders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media(max-width:520px){.scene-sliders{grid-template-columns:1fr;gap:0}.visual-customization{padding:14px}}
 </style>
 </head>
 <body>
@@ -71,6 +81,20 @@ body.immersive .stage{height:100dvh;width:100dvw}
 <section class="stage" aria-label="Visualizer"><canvas id="visual" aria-label="Animated music visualizer"></canvas><div class="stage-top"><span id="mode" class="badge">AMBIENT MOTION</span><button id="favorite" aria-label="Toggle favorite visualizer" style="font-size:23px;color:var(--accent)">♡</button></div><div class="stage-bottom"><div><h2 id="visual-name">Yosemite</h2><p id="visual-subtitle">Clouds over the valley</p></div><button id="expand" aria-label="Toggle immersive mode">⤢</button></div></section>
 <section class="control-deck" aria-label="Visualizer control deck"><h2 class="deck-title">Find your atmosphere.</h2><section id="tron-controls" class="tron-controls" aria-label="Tron options" hidden><span class="micro">TRON / ENTER THE GRID</span><select id="tron-mode" aria-label="Tron animation"><option value="lightCycles">Light cycles</option><option value="identityDiscs">Identity discs</option><option value="circuitExpansion">Circuit expansion</option></select><div class="tron-colors" aria-label="Tron colors"><button data-tron-color="Light blue" aria-pressed="true"><i style="background:#66deff"></i>Light blue</button><button data-tron-color="Orange" aria-pressed="false"><i style="background:#ff8c30"></i>Orange</button><button data-tron-color="Red" aria-pressed="false"><i style="background:#ff3347"></i>Red</button></div></section>
 <div class="response-controls"><label><input id="audio-reactive" type="checkbox" checked> React to audio</label><span class="note" id="response-note"></span></div>
+<section id="visual-customization" class="visual-customization" aria-label="Customize selected visualizer" hidden>
+<div class="customization-heading"><h3 id="customization-title">Customize visualizer</h3><button id="reset-visual-customization">Reset this visualizer</button></div>
+<label class="custom-color-toggle"><input type="checkbox" id="custom-colors"> Custom colors</label>
+<div class="scene-colors">
+<label id="scene-color-label-0">Primary <input type="color" id="scene-color-0" value="#91a1ff" aria-label="Primary scene color"></label>
+<label id="scene-color-label-1">Secondary <input type="color" id="scene-color-1" value="#cb79ff" aria-label="Secondary scene color"></label>
+<label id="scene-color-label-2">Highlight <input type="color" id="scene-color-2" value="#f3b0e6" aria-label="Highlight scene color"></label>
+</div>
+<div class="scene-sliders">
+<label class="control"><div><span>Scene speed</span><output id="scene-speed-value">0.65×</output></div><input id="scene-speed" type="range" min="0.1" max="2" step="0.05" value="0.65" aria-label="Scene speed"></label>
+<label class="control"><div><span>Scene size</span><output id="scene-size-value">100%</output></div><input id="scene-size" type="range" min="0.5" max="1.5" step="0.05" value="1" aria-label="Scene size"></label>
+</div>
+<p class="note">Only this visualizer changes. Size zooms from the center; larger scenes may extend beyond the edges. Use Save preferences locally in Visual settings to keep your setup.</p>
+</section>
 <div class="gallery-head"><span class="micro">VISUALIZERS</span><span class="micro" id="visual-count">09 / CHOOSE YOUR MOOD</span></div><div class="cards" id="gallery"></div><input id="gallery-scroll" type="range" min="0" max="100" step="0.1" value="0" aria-label="Scroll visualizers">
 <div class="duo-controls">
 <div class="duo-palette" id="duo-palettes" aria-label="Quick palettes"></div>
@@ -331,6 +355,41 @@ try{audioReactive=localStorage.getItem('afterglow.audioReactive')!=='false'}catc
 const haloOrders=new Map();
 function haloOrder(n){if(!haloOrders.has(n))haloOrders.set(n,Array.from({length:n},(_,i)=>i).sort((a,b)=>Math.sin(a/n*Math.PI*2)-Math.sin(b/n*Math.PI*2)));return haloOrders.get(n)}
 let style='yosemite',palette='Ultraviolet',source='ambient',paused=false,gain=1.25,speed=.65,glow=.6,detail=.65,time=7,last=0,activeMic=null,audioContext=null,analyzer=null,playerNode=null,micNode=null,objectURL=null;
+// Per-visualizer overrides: legacy preferences retain their original appearance.
+const customizableStyles=['aurora','spectrum','orbit','waveform','tunnel','constellation','terrain','bloom','tron','halo','ironMan'];
+let customizations={};
+function customization(kind=style){return customizableStyles.includes(kind)?(customizations[kind]||{}):{}}
+function sceneSpeed(){return customization().speed??speed}
+function defaultSceneColors(kind){return kind==='tron'?Array(3).fill(tronColors[tronColor]):kind==='ironMan'?['#75e8ff','#ff493b','#ffd080']:palettes[palette]}
+function sceneColors(kind){return customization(kind).colors||defaultSceneColors(kind)}
+function normalizeCustomizations(value){
+ const result={};
+ for(const kind of customizableStyles){
+  const item=value?.[kind];if(!item||typeof item!=='object'||Array.isArray(item))continue;
+  const colors=Array.isArray(item.colors)&&item.colors.length===3&&item.colors.every(c=>typeof c==='string'&&/^#[0-9a-f]{6}$/i.test(c))?item.colors.map(c=>c.toLowerCase()):null;
+  result[kind]={colors,size:bounded(item.size,.5,1.5,1)};
+  if(typeof item.speed==='number'&&Number.isFinite(item.speed))result[kind].speed=bounded(item.speed,.1,2,.65);
+ }
+ return result;
+}
+function updateCustomization(change){
+ if(!customizableStyles.includes(style))return;
+ customizations=normalizeCustomizations({...customizations,[style]:{...customization(),...change}});
+ syncCustomization();syncControls();syncTron();requestThumbnails();requestRender();
+}
+function syncCustomization(){
+ const enabled=customizableStyles.includes(style),panel=$('visual-customization');panel.hidden=!enabled;
+ if(!enabled)return;
+ const custom=customization(),colors=sceneColors(style);
+ $('customization-title').textContent='Customize '+styles.find(s=>s[0]===style)[1];
+ $('custom-colors').checked=!!custom.colors;
+ for(let i=0;i<3;i++){
+  $('scene-color-'+i).value=colors[i];$('scene-color-'+i).disabled=!custom.colors;
+  $('scene-color-label-'+i).hidden=style==='tron'&&i>0;
+ }
+ $('scene-speed').value=sceneSpeed();$('scene-speed-value').textContent=sceneSpeed().toFixed(2)+'×';
+ $('scene-size').value=custom.size??1;$('scene-size-value').textContent=Math.round((custom.size??1)*100)+'%';
+}
 let favorites=new Set(['aurora','orbit']);const audio=new Audio();audio.volume=.8;audio.preload='auto';
 const bands=new Float32Array(64),wave=new Float32Array(256);let rms=.12;
 let rawFrequency=null,rawWave=null,toastTimer=null;
@@ -340,9 +399,9 @@ let tronMode='lightCycles',tronColor='Light blue';
 try { const saved=JSON.parse(localStorage.getItem('afterglow.tron')||'{}'); if(tronModes.some(m=>m[0]===saved.mode))tronMode=saved.mode; if(Object.hasOwn(tronColors,saved.color))tronColor=saved.color; } catch {}
 function syncTron(){
   const active=style==='tron';$('tron-controls').hidden=!active;$('palettes').hidden=active;$('tron-palette-note').hidden=!active;$('palette-heading').textContent=active?'TRON COLOR':'COLOR PALETTE';
-  document.documentElement.style.setProperty('--accent',active?tronColors[tronColor]:palettes[palette][0]);
+  document.documentElement.style.setProperty('--accent',customization().colors?.[0]||(active?tronColors[tronColor]:palettes[palette][0]));
   $('tron-mode').value=tronMode;
-  document.querySelectorAll('[data-tron-color]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tronColor===tronColor));
+  document.querySelectorAll('[data-tron-color]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.tronColor===tronColor&&!customization('tron').colors));
   if(active){const m=tronModes.find(m=>m[0]===tronMode);$('visual-name').textContent=m[1];$('visual-subtitle').textContent='TRON · '+tronColor+' · '+m[2];}
 }
 const tronWrap=(value,period)=>((value%period)+period)%period;
@@ -360,7 +419,7 @@ function tronTrail(index,t){const route=cycleRoutes[index],perimeter=tronLength(
 function tronDisc(index,t,aspect){const W=Math.max(1,aspect),H=Math.max(1,1/aspect),speeds=[[.17,.13],[-.14,.19],[.21,-.12],[-.12,-.16]],v=speeds[index];return[tronReflect(W*(.2+index*.19)+t*v[0],.1,W-.1),tronReflect(H*(.22+index*.17)+t*v[1],.1,H-.1)]}
 function tronCircuits(t){const growth=Math.max(0,t)/4.8+2.5,newest=Math.floor(growth),out=[];for(let ring=Math.max(0,newest-7);ring<=newest;ring++){const outer=.62*1.52**(ring-growth),inner=outer/1.52,p=Math.min(1,(growth-ring)*1.7);for(let arm=0;arm<8;arm++){const angle=arm*Math.PI/4,u=[Math.cos(angle),Math.sin(angle)],v=[-Math.sin(angle),Math.cos(angle)],at=(r,d=0)=>[u[0]*r+v[0]*d,u[1]*r+v[1]*d],mid=inner+(outer-inner)*.45,offset=(outer-inner)*(arm%2?-.34:.34),spur=(outer-inner)*.55;out.push({points:[at(inner),at(mid),at(mid,offset),at(outer,offset),at(outer)],progress:p});out.push({points:[at(mid,offset),at(mid,offset+spur),at(mid+(outer-inner)*.23,offset+spur)],progress:Math.max(0,(p-.45)/.55)})}}return out}
 function renderTron(canvas,t,b,small){
-  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,D=Math.min(W,H),C=tronColors[tronColor],E=small?.35:Math.min(1,rms*gain*3),scale=Math.max(.5,D/350);
+  const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,D=Math.min(W,H),C=sceneColors('tron')[0],E=small?.35:Math.min(1,rms*gain*3),scale=Math.max(.5,D/350);
   ctx.save();ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;ctx.shadowBlur=0;ctx.fillStyle='#030910';ctx.fillRect(0,0,W,H);
   const wash=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.65);wash.addColorStop(0,C+'19');wash.addColorStop(1,C+'00');ctx.fillStyle=wash;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';
   function stroke(points,opacity=.8,width=1.4,haze=true){ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=C;ctx.globalAlpha=opacity;ctx.lineWidth=width;ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=C;ctx.shadowBlur=haze&&!small?glow*12*scale:0;ctx.stroke();ctx.shadowBlur=0;}
@@ -398,9 +457,9 @@ function requestThumbnails(){thumbnailsDirty=true;requestRender()}
 function requestRender(){needsRedraw=true;if(!document.hidden&&animationRequest===null)animationRequest=requestAnimationFrame(tick)}
 function configureBands(){const upper=Math.min(16000,audioContext.sampleRate*.48);for(let i=0;i<64;i++){bandStarts[i]=Math.max(1,Math.floor(40*(upper/40)**(i/64)/audioContext.sampleRate*analyzer.fftSize));bandEnds[i]=Math.min(rawFrequency.length-1,Math.ceil(40*(upper/40)**((i+1)/64)/audioContext.sampleRate*analyzer.fftSize))}}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,8500)}
-function pickStyle(next){const s=styles.find(v=>v[0]===next);if(!s)return;requestRender();style=next;$('visual-name').textContent=s[1];$('visual-subtitle').textContent=s[2];document.querySelectorAll('.card').forEach(el=>{el.classList.toggle('active',el.dataset.style===style);el.setAttribute('aria-pressed',el.dataset.style===style)});updateFavorite();syncTron();if(window.parent!==window)window.parent?.postMessage?.({type:'afterglow-demo-state',visual:style},'*')}
+function pickStyle(next){const s=styles.find(v=>v[0]===next);if(!s)return;requestRender();style=next;$('visual-name').textContent=s[1];$('visual-subtitle').textContent=s[2];document.querySelectorAll('.card').forEach(el=>{el.classList.toggle('active',el.dataset.style===style);el.setAttribute('aria-pressed',el.dataset.style===style)});updateFavorite();syncTron();syncCustomization();syncControls();if(window.parent!==window)window.parent?.postMessage?.({type:'afterglow-demo-state',visual:style},'*')}
 function updateFavorite(){$('favorite').textContent=favorites.has(style)?'♥':'♡';$('favorite').setAttribute('aria-pressed',favorites.has(style))}
-function pickPalette(next){if(!Object.hasOwn(palettes,next))return;requestRender();palette=next;document.documentElement.style.setProperty('--accent',palettes[palette][0]);document.querySelectorAll('.palette').forEach(el=>el.classList.toggle('active',el.dataset.palette===palette));requestThumbnails();if($('duo-speed'))syncDuoControls();syncTron()}
+function pickPalette(next){if(!Object.hasOwn(palettes,next))return;requestRender();palette=next;document.documentElement.style.setProperty('--accent',palettes[palette][0]);document.querySelectorAll('.palette').forEach(el=>el.classList.toggle('active',el.dataset.palette===palette));requestThumbnails();if($('duo-speed'))syncDuoControls();syncTron();syncCustomization()}
 $('visual-count').textContent=String(styles.length).padStart(2,'0')+' / CHOOSE YOUR MOOD';
 for(const [id,name] of styles){const b=document.createElement('button');b.className='card';b.dataset.style=id;b.setAttribute('aria-label',name+' visualizer');b.innerHTML='<canvas width="264" height="156"></canvas><span>'+name+'</span>';b.onclick=()=>pickStyle(id);$('gallery').appendChild(b)}
 for(const [name,colors] of Object.entries(palettes)){const b=document.createElement('button');b.className='palette';b.dataset.palette=name;b.innerHTML='<span class="swatches">'+colors.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>'+name;b.onclick=()=>pickPalette(name);$('palettes').appendChild(b)}
@@ -563,11 +622,22 @@ const sceneRenderers=Object.freeze({
  yosemite:(canvas,time,bands,small)=>renderYosemite(canvas,time,small)
 });
 function render(canvas,kind,t,b,w,small=false){
+ const scale=customization(kind).size??1;
+ if(scale===1){renderScene(canvas,kind,t,b,w,small);return}
+ const ctx=canvas.getContext('2d');ctx.save();
+ try{
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;
+  ctx.fillStyle='#090b13';ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.translate(canvas.width*(1-scale)/2,canvas.height*(1-scale)/2);ctx.scale(scale,scale);
+  renderScene(canvas,kind,t,b,w,small);
+ }finally{ctx.restore()}
+}
+function renderScene(canvas,kind,t,b,w,small=false){
  const scene=sceneRenderers[kind];
  if(scene){scene(canvas,t,b,small);return}
- const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
+ const ctx=canvas.getContext('2d'),W=canvas.width,H=canvas.height,C=customization(kind).colors||palettes[palette],D=Math.min(W,H);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.shadowBlur=0;ctx.fillStyle='#090b13';ctx.fillRect(0,0,W,H);const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*.6);bg.addColorStop(0,C[0]+'17');bg.addColorStop(1,C[0]+'00');ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);ctx.globalCompositeOperation='lighter';const level=i=>Math.min(1,Math.max(0,b[Math.abs(i)%64]*gain));const stroke=(points,color,opacity=.65,width=1.5)=>{ctx.beginPath();points.forEach(([x,y],i)=>i?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.strokeStyle=color;ctx.globalAlpha=opacity;ctx.lineWidth=width*(small?1:Math.max(1,devicePixelRatio));ctx.shadowColor=color;ctx.shadowBlur=small?0:glow*14;ctx.lineJoin='round';ctx.stroke();ctx.shadowBlur=0};
 if(kind==='ironMan'){
- const cx=W*.5,cy=H*.46,radius=D*.29,red='#ff493b',gold='#ffd080',cyan='#75e8ff',energy=small?.35:Math.min(1,Math.max(0,rms*gain*3));
+ const cx=W*.5,cy=H*.46,radius=D*.29,red=sceneColors(kind)[1],gold=sceneColors(kind)[2],cyan=sceneColors(kind)[0],energy=small?.35:Math.min(1,Math.max(0,rms*gain*3));
  const point=(a,r)=>[cx+Math.cos(a)*r,cy+Math.sin(a)*r];
  const arc=(r,start,length)=>Array.from({length:25},(_,i)=>point(start+length*i/24,r));
  const aura=ctx.createRadialGradient(cx,cy,0,cx,cy,radius);aura.addColorStop(0,cyan);aura.addColorStop(1,cyan+'00');ctx.globalAlpha=.12+energy*.16;ctx.fillStyle=aura;ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);ctx.fill();
@@ -597,7 +667,7 @@ if(kind==='constellation'){const n=small?32:Math.floor(28+detail*55),points=Arra
 if(kind==='terrain'){const n=small?15:Math.floor(12+detail*15);for(let row=0;row<n;row++){const z=row/n,scale=.15+z*.85,p=[];for(let i=0;i<64;i++){const x=i/63,ridge=level(i)*(.6+.4*Math.sin(x*12+z*7+t*.3));p.push([W*(.5+(x-.5)*scale*1.7),H*(.38+z*.56-ridge*scale*.25)])}stroke(p,C[row%3],.12+z*.58,.7+z)}}
 if(kind==='bloom'){const n=small?7:Math.floor(5+detail*7);for(let l=0;l<n;l++){const p=[];for(let i=0;i<=240;i++){const a=i/240*Math.PI*2,petal=.65+.2*Math.sin(a*6+t*.3+l*.13),r=D*.28*(petal+level(Math.floor(i/241*63))*.25)*(.6+l*.075),th=a+t*.04+l*.035;p.push([W/2+Math.cos(th)*r,H/2+Math.sin(th)*r])}stroke(p,C[l%3],.25+l*.035,1)}}ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
 function drawThumbnails(){
- const key=[palette,gain,glow,yosemiteAssetsReady,tronMode,tronColor].join('/');
+ const key=[palette,gain,glow,yosemiteAssetsReady,tronMode,tronColor,JSON.stringify(customizations)].join('/');
  if(key===thumbnailKey)return;
  thumbnailKey=key;
  document.querySelectorAll('.card').forEach(el=>render(el.querySelector('canvas'),el.dataset.style,7,thumbnailBands,thumbnailWave,true));
@@ -607,16 +677,16 @@ const preferenceKey='afterglow.preferences.v1';let savedPreferences=null;
 function bounded(value,min,max,fallback){return typeof value==='number'&&Number.isFinite(value)?Math.min(max,Math.max(min,value)):fallback}
 function normalizePreferences(value){
  if(!value||typeof value!=='object'||Array.isArray(value)||value.version!==1)throw new Error('This is not a supported Afterglow preference file.');
- return {version:1,audioReactive:value.audioReactive!==false,tronMode:tronModes.some(m=>m[0]===value.tronMode)?value.tronMode:'lightCycles',tronColor:Object.hasOwn(tronColors,value.tronColor)?value.tronColor:'Light blue',style:styles.some(s=>s[0]===value.style)?value.style:'yosemite',palette:Object.hasOwn(palettes,value.palette)?value.palette:'Ultraviolet',gain:bounded(value.gain,.2,3,1.25),speed:bounded(value.speed,.1,2,.65),glow:bounded(value.glow,0,1,.6),detail:bounded(value.detail,.2,1,.65),fps:value.fps===30?30:60,volume:bounded(value.volume,0,1,.8),paused:value.paused===true,favorites:Array.isArray(value.favorites)?[...new Set(value.favorites.filter(s=>styles.some(item=>item[0]===s)))]:['aurora','orbit']};
+ return {version:1,customizations:normalizeCustomizations(value.customizations),audioReactive:value.audioReactive!==false,tronMode:tronModes.some(m=>m[0]===value.tronMode)?value.tronMode:'lightCycles',tronColor:Object.hasOwn(tronColors,value.tronColor)?value.tronColor:'Light blue',style:styles.some(s=>s[0]===value.style)?value.style:'yosemite',palette:Object.hasOwn(palettes,value.palette)?value.palette:'Ultraviolet',gain:bounded(value.gain,.2,3,1.25),speed:bounded(value.speed,.1,2,.65),glow:bounded(value.glow,0,1,.6),detail:bounded(value.detail,.2,1,.65),fps:value.fps===30?30:60,volume:bounded(value.volume,0,1,.8),paused:value.paused===true,favorites:Array.isArray(value.favorites)?[...new Set(value.favorites.filter(s=>styles.some(item=>item[0]===s)))]:['aurora','orbit']};
 }
-function currentPreferences(){return normalizePreferences({version:1,audioReactive,tronMode,tronColor,style,palette,gain,speed,glow,detail,fps,volume:audio.volume,paused,favorites:[...favorites]})}
+function currentPreferences(){return normalizePreferences({version:1,customizations,audioReactive,tronMode,tronColor,style,palette,gain,speed,glow,detail,fps,volume:audio.volume,paused,favorites:[...favorites]})}
 function preferenceStatus(text){$('preference-status').textContent=text;$('restore-preferences').disabled=!savedPreferences}
 function syncControls(){
- for(const [name,value] of Object.entries({gain,speed,glow,detail})){$(name).value=value;$(name+'-value').textContent=name==='gain'||name==='speed'?value.toFixed(1)+'×':Math.round(value*100)+'%'}
- $('fps').value=fps;$('volume').value=audio.volume;syncDuoControls();
+ for(const [name,value] of Object.entries({gain,speed:sceneSpeed(),glow,detail})){$(name).value=value;$(name+'-value').textContent=name==='gain'||name==='speed'?value.toFixed(1)+'×':Math.round(value*100)+'%'}
+ $('fps').value=fps;$('volume').value=audio.volume;syncDuoControls();syncCustomization();
 }
 function applyPreferences(value){
- const p=normalizePreferences(value);audioReactive=p.audioReactive;tronMode=p.tronMode;tronColor=p.tronColor;gain=p.gain;speed=p.speed;glow=p.glow;detail=p.detail;fps=p.fps;audio.volume=p.volume;paused=p.paused;favorites=new Set(p.favorites);
+ const p=normalizePreferences(value);customizations=p.customizations;audioReactive=p.audioReactive;tronMode=p.tronMode;tronColor=p.tronColor;gain=p.gain;speed=p.speed;glow=p.glow;detail=p.detail;fps=p.fps;audio.volume=p.volume;paused=p.paused;favorites=new Set(p.favorites);
  pickStyle(p.style);pickPalette(p.palette);syncControls();lastDraw=null;requestThumbnails();updatePlay();
 }
 function loadPreferences(){
@@ -747,7 +817,7 @@ audio.onplay=audio.onpause=audio.onended=audio.onloadedmetadata=updatePlay;
 audio.onerror=()=>{if(source==='local'){updatePlay();toast('The browser cannot decode this file. Try an unprotected MP3 or WAV.')}};
 for(const name of ['gain','speed','glow','detail'])$(name).oninput=event=>{
  const ranges={gain:[.2,3,1.25],speed:[.1,2,.65],glow:[0,1,.6],detail:[.2,1,.65]},v=bounded(Number(event.target.value),...ranges[name]);
- if(name==='gain')gain=v;if(name==='speed')speed=v;if(name==='glow')glow=v;if(name==='detail')detail=v;
+ if(name==='gain')gain=v;if(name==='speed'){if(customizableStyles.includes(style)){updateCustomization({speed:v});return}else speed=v;}if(name==='glow')glow=v;if(name==='detail')detail=v;
  syncControls();if(name==='gain'||name==='glow')requestThumbnails();requestRender();
 };
 $('fps').onchange=event=>{fps=Number(event.target.value)===30?30:60;lastDraw=null;requestRender()};
@@ -778,7 +848,7 @@ function tick(ms){
  if(lastDraw!==null&&ms-lastDraw<interval-.5){animationRequest=requestAnimationFrame(tick);return}
  const delta=last?Math.min(.05,(ms-last)/1000):0;last=ms;
  lastDraw=lastDraw===null||needsRedraw?ms:lastDraw+Math.max(1,Math.floor((ms-lastDraw+.5)/interval))*interval;
- if(!motionStopped())time+=delta*speed;
+ if(!motionStopped())time+=delta*sceneSpeed();
  const live=audioReactive&&analyzer&&((source==='local'&&!audio.paused&&!audio.ended)||(source==='mic'&&activeMic));
  if(live){
   analyzer.getFloatFrequencyData(rawFrequency);analyzer.getFloatTimeDomainData(rawWave);
@@ -809,8 +879,8 @@ window.addEventListener('message',event=>{
  if(styles.some(item=>item[0]===visual))pickStyle(visual);
 });
 function syncDuoControls(){
- $('duo-speed').value=speed;$('duo-glow').value=glow;
- $('duo-speed-value').textContent=speed.toFixed(1)+'×';$('duo-glow-value').textContent=Math.round(glow*100)+'%';
+ $('duo-speed').value=sceneSpeed();$('duo-glow').value=glow;
+ $('duo-speed-value').textContent=sceneSpeed().toFixed(1)+'×';$('duo-glow-value').textContent=Math.round(glow*100)+'%';
  document.querySelectorAll('[data-duo-palette]').forEach(el=>{const selected=el.dataset.duoPalette===palette;el.classList.toggle('active',selected);el.setAttribute('aria-pressed',selected)});
 }
 for(const [name,colors] of Object.entries(palettes)){
@@ -819,8 +889,13 @@ for(const [name,colors] of Object.entries(palettes)){
 }
 for(const name of ['speed','glow'])$('duo-'+name).oninput=event=>{$(name).oninput(event);$(name).value=event.target.value;syncDuoControls()};
 $('tron-mode').onchange=e=>{if(tronModes.some(m=>m[0]===e.target.value))tronMode=e.target.value;syncTron();requestThumbnails()};
-document.querySelectorAll('[data-tron-color]').forEach(b=>b.onclick=()=>{tronColor=b.dataset.tronColor;syncTron();requestThumbnails()});
-syncDuoControls();loadPreferences();syncTron();
+document.querySelectorAll('[data-tron-color]').forEach(b=>b.onclick=()=>{tronColor=b.dataset.tronColor;if(customizations.tron)customizations.tron.colors=null;syncTron();syncCustomization();requestThumbnails()});
+$('custom-colors').onchange=e=>updateCustomization({colors:e.target.checked?[...defaultSceneColors(style)]:null});
+for(let i=0;i<3;i++)$('scene-color-'+i).oninput=e=>{const colors=[...sceneColors(style)];colors[i]=e.target.value;updateCustomization({colors})};
+$('scene-speed').oninput=e=>updateCustomization({speed:Number(e.target.value)});
+$('scene-size').oninput=e=>updateCustomization({size:Number(e.target.value)});
+$('reset-visual-customization').onclick=()=>{delete customizations[style];syncControls();syncTron();requestThumbnails();requestRender()};
+syncDuoControls();loadPreferences();syncTron();syncCustomization();
 motionPreference.addEventListener?.('change',event=>{reducedMotion=event.matches;last=0;updatePlay()});
 
 window.addEventListener('pagehide',()=>{++requestId;playPending=false;stopMic();audio.pause();if(animationRequest!==null)cancelAnimationFrame(animationRequest);animationRequest=null});

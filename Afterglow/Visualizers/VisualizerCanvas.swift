@@ -23,6 +23,7 @@ struct VisualizerCanvas: View, Equatable {
             && lhs.playing == rhs.playing && lhs.reactive == rhs.reactive
             && lhs.paused == rhs.paused && lhs.preview == rhs.preview
             && lhs.settings.speed == rhs.settings.speed
+            && lhs.settings.customization(for: lhs.style) == rhs.settings.customization(for: rhs.style)
             && lhs.settings.sensitivity == rhs.settings.sensitivity
             && lhs.settings.glow == rhs.settings.glow
             && lhs.settings.tronMode == rhs.settings.tronMode && lhs.settings.tronPalette == rhs.settings.tronPalette
@@ -40,7 +41,7 @@ struct VisualizerCanvas: View, Equatable {
             }
             TimelineView(.animation(minimumInterval: interval, paused: suspendTimeline)) { timeline in
                 let elapsed = preview ? 7.0 : (clock?.elapsed(at: timeline.date) ?? frozen ?? timeline.date.timeIntervalSince(origin))
-                let time = clock != nil && !preview ? elapsed : elapsed * settings.speed
+                let time = clock != nil && !preview ? elapsed : elapsed * (settings.customization(for: style).speed ?? settings.speed)
                 let input = reactive && !preview
                     ? (playing ? (analyzer?.snapshot() ?? .silent) : .silent)
                     : AudioFrame.ambient(at: time, includeWaveform: style == .waveform)
@@ -49,7 +50,8 @@ struct VisualizerCanvas: View, Equatable {
                                         palette: palette, frame: input, time: time,
                                         sensitivity: settings.sensitivity, glow: settings.glow,
                                         detail: preview ? 0.3 : settings.detail,
-                                        tronMode: settings.tronMode, tronPalette: settings.tronPalette)
+                                        tronMode: settings.tronMode, tronPalette: settings.tronPalette,
+                                        customization: settings.customization(for: style))
                 }
             }
         }
@@ -82,9 +84,18 @@ enum VisualRenderer {
     static func draw(context: GraphicsContext, size: CGSize, style: VisualizerStyle,
                      palette: VisualPalette, frame: AudioFrame, time: Double,
                      sensitivity: Double, glow: Double, detail: Double,
-                     tronMode: TronMode = .lightCycles, tronPalette: TronPalette = .lightBlue) {
+                     tronMode: TronMode = .lightCycles, tronPalette: TronPalette = .lightBlue,
+                     customization: VisualizerCustomization = .init()) {
         let width = size.width, height = size.height
         guard width > 1, height > 1 else { return }
+        var context = context
+        let custom = style.supportsCustomization ? customization.validated() : VisualizerCustomization()
+        if custom.size != 1 {
+            context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(StudioTheme.background))
+            context.translateBy(x: width * (1 - custom.size) / 2, y: height * (1 - custom.size) / 2)
+            context.scaleBy(x: custom.size, y: custom.size)
+        }
+        let customColors = custom.colors?.map { Color(hex: $0) }
         switch style {
         case .forestWalk:
             ForestWalkRenderer.draw(context: context, size: size, palette: palette, frame: frame,
@@ -96,7 +107,7 @@ enum VisualRenderer {
             return
         case .tron:
             TronRenderer.draw(context: context, size: size, mode: tronMode, palette: tronPalette,
-                              frame: frame, time: time, sensitivity: sensitivity, glow: glow, detail: detail)
+                              frame: frame, time: time, sensitivity: sensitivity, glow: glow, detail: detail, colorOverride: customColors?.first)
             return
         case .yosemite:
             YosemiteScene.draw(context: context, size: size, palette: palette, frame: frame,
@@ -104,11 +115,10 @@ enum VisualRenderer {
             return
         default: break
         }
-        var context = context
         let rect = CGRect(origin: .zero, size: size)
         context.fill(Path(rect), with: .color(StudioTheme.background))
         let center = CGPoint(x: width * 0.5, y: height * 0.5)
-        let colors = palette.colors
+        let colors = customColors ?? palette.colors
         let energy = min(1, Double(frame.rms) * sensitivity * 3)
         context.fill(Path(rect), with: .radialGradient(
             Gradient(colors: [colors[0].opacity(0.095 + energy * 0.10), .clear]),
@@ -124,7 +134,7 @@ enum VisualRenderer {
         case .terrain: terrain(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .bloom: bloom(&context, size, frame, time, colors, sensitivity, glow, detail)
         case .halo: halo(&context, size, frame, time, colors, sensitivity, glow, detail)
-        case .ironMan: ironMan(&context, size, frame, time, colors, sensitivity, glow, detail)
+        case .ironMan: ironMan(&context, size, frame, time, colors, sensitivity, glow, detail, customColors)
         case .fallout: fallout(&context, size, frame, time, sensitivity, glow, detail)
         case .superMario: mario(&context, size, frame, time, colors, sensitivity, glow)
         case .spaceFlight: spaceFlight(&context, size, frame, time, colors, sensitivity, glow, detail)
@@ -445,11 +455,11 @@ enum VisualRenderer {
     }
 
     private static func ironMan(_ c: inout GraphicsContext, _ s: CGSize, _ f: AudioFrame,
-                                _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double) {
+                                _ t: Double, _ colors: [Color], _ gain: Double, _ glow: Double, _ detail: Double, _ custom: [Color]?) {
         let unit = min(s.width, s.height)
         let center = CGPoint(x: s.width * 0.5, y: s.height * 0.46)
-        let red = Color(hex: 0xFF493B), gold = Color(hex: 0xFFD080)
-        let cyan = Color(hex: 0x75E8FF)
+        let red = custom?[1] ?? Color(hex: 0xFF493B), gold = custom?[2] ?? Color(hex: 0xFFD080)
+        let cyan = custom?[0] ?? Color(hex: 0x75E8FF)
         let energy = min(1, max(0, Double(f.rms) * gain * 3))
         let radius = unit * 0.29
         func point(_ a: Double, _ r: Double) -> CGPoint {

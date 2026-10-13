@@ -2,10 +2,10 @@ import SwiftUI
 
 enum TronRenderer {
     static func draw(context: GraphicsContext, size: CGSize, mode: TronMode, palette: TronPalette,
-                     frame: AudioFrame, time: Double, sensitivity: Double, glow: Double, detail: Double) {
+                     frame: AudioFrame, time: Double, sensitivity: Double, glow: Double, detail: Double, colorOverride: Color? = nil) {
         var c = context
         let bounds = CGRect(origin: .zero, size: size)
-        let color = palette.color
+        let color = colorOverride ?? palette.color
         let energy = min(1, max(0, Double(frame.rms) * sensitivity * 3))
         c.fill(Path(bounds), with: .color(Color(hex: 0x030910)))
         c.fill(Path(bounds), with: .radialGradient(

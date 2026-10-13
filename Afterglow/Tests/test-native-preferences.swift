@@ -31,6 +31,26 @@ enum NativePreferenceRegression {
         PreferenceStore.forget(defaults: defaults)
         assert(PreferenceStore.load(defaults: defaults) == nil && defaults.string(forKey: "unrelated") == "keep")
 
+        var customized = VisualSettings()
+        customized.style = .aurora
+        customized.motionSpeed = 1.45
+        customized.customizations["aurora"]?.colors = [0x21AC68, 0x123456, 0xABCDEF]
+        customized.customizations["aurora"]?.size = 0.75
+        customized.style = .halo
+        assert(customized.motionSpeed == 0.65 && customized.customization(for: .halo).size == 1)
+        customized.motionSpeed = 0.2
+        let roundTrip = try JSONDecoder().decode(VisualSettings.self, from: JSONEncoder().encode(customized))
+        assert(roundTrip == customized && roundTrip.customization(for: .aurora).speed == 1.45)
+        assert(roundTrip.customization(for: .aurora).colors == [0x21AC68, 0x123456, 0xABCDEF])
+        let legacy = try JSONDecoder().decode(VisualSettings.self, from: Data("{}".utf8))
+        assert(legacy.customizations.isEmpty && legacy.motionSpeed == 0.65)
+        customized.customizations["halo"] = .init(colors: [0xFFFFFFF], speed: .nan, size: .infinity)
+        customized.customizations["minecraft"] = .init(size: 1.5)
+        let clean = customized.validated()
+        assert(clean.customization(for: .halo) == .init() && clean.customizations["minecraft"] == nil)
+        customized.customizations.removeValue(forKey: "aurora")
+        assert(customized.customization(for: .aurora) == .init())
+
         let start = Date(), clock = VisualizerClock()
         clock.setPaused(true, at: start); clock.setSpeed(0.5, at: start); clock.setPaused(false, at: start)
         let at: (Double) -> Date = { start.addingTimeInterval($0) }
@@ -41,7 +61,7 @@ enum NativePreferenceRegression {
         assert(abs(clock.elapsed(at: at(20)) - 15) < 1e-8)
         clock.setPaused(false, at: at(20)); clock.setPaused(false, at: at(22))
         assert(abs(clock.elapsed(at: at(24)) - 19) < 1e-8)
-        print("PASS: local preferences, safe validation, corruption, scoped forget, continuous speed, and pause/resume.")
+        print("PASS: per-visualizer customization migration/isolation/round-trip, local preferences, safe validation, corruption, scoped forget, continuous speed, and pause/resume.")
     }
     private static func require<T>(_ value: T?) throws -> T {
         guard let value else { throw NSError(domain: "AfterglowRegression", code: 1) }
