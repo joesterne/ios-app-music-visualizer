@@ -7,6 +7,7 @@ node --check Web/app.js
 node --check Web/forest-walk.js
 node --check Web/minecraft.js
 node Tests/test-controls.cjs
+node Tests/test-customization-rendering.cjs
 node Tests/test_preview.cjs
 node Tests/test-preview.cjs
 node Tests/test-duo-demo.cjs

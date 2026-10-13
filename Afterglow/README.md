@@ -280,3 +280,14 @@ Choose **Super Mario** for a pixel-art Mario running through a looping side-scro
 ## Space Flight visualizer
 
 Choose **Space Flight** for a first-person trip through a starfield. The camera banks and climbs while ringed planets and other ships approach and pass beside the cockpit. Automatic evasive paths keep obstacles away from the center flight corridor. Audio energy lengthens star trails and ship engine plumes; independent mode uses ambient animation. Palette, speed, glow, detail, pause, Reduce Motion, and immersive controls apply. This is an automatic visualizer, not a piloted game.
+
+## Per-visualizer customization
+
+Aurora, Spectrum, Orbit, Waveform, Tunnel, Constellation, Terrain, Bloom, Tron, Halo, and Iron Man now have independent customization settings. In the browser, select a scene and use **Customize [scene]** below the stage. In the native app, open **Visual settings**; the Duo control deck also exposes these controls.
+
+- **Custom colors:** enable to pick primary, secondary, and highlight colors. Tron uses one custom neon color across its three modes; Iron Man can recolor its reactor, armor rings, and highlights. Disable to return to the existing palette or themed colors.
+- **Scene speed:** 0.10×–2.00× animation speed, without changing music playback speed. The existing motion controls edit the same value for the selected scene. Audio-driven geometry still follows the input signal; Pause and Reduce Motion continue to freeze visual motion.
+- **Scene size:** 50%–150% centered zoom, including strokes and glow. Enlarged scenes can extend beyond the canvas edges.
+- **Reset this visualizer:** removes only that scene's overrides. Other scenes keep their settings.
+
+Use **Save preferences locally** to retain all scene overrides across launches. Browser JSON export/import includes these settings. Older saved preferences retain their existing palettes and speed until you customize a scene. Other visualizers retain their existing controls.

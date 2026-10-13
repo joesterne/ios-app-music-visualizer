@@ -46,3 +46,13 @@ body.immersive .stage{height:100dvh;width:100dvw}
 #palettes[hidden],#tron-palette-note[hidden]{display:none}.tron-controls{margin:16px 0 22px;padding:16px;border:1px solid var(--accent);border-radius:14px;background:#0b151e;display:flex;flex-wrap:wrap;gap:14px;align-items:center}.tron-controls[hidden]{display:none}.tron-controls .micro{color:var(--accent)}.tron-controls select{background:#101c27;color:#eff0f7;border:1px solid #ffffff24;padding:10px;border-radius:8px;min-height:44px}.tron-colors{display:flex;flex-wrap:wrap;gap:6px;margin-left:auto}.tron-colors button{font-size:11px;min-height:44px;padding:8px 12px;border:1px solid transparent;border-radius:22px;display:flex;align-items:center;gap:7px}.tron-colors button[aria-pressed=true]{border-color:var(--accent);background:#ffffff0b}.tron-colors button[aria-pressed=true]:after{content:'✓'}.tron-colors i{display:block;width:12px;height:12px;border-radius:50%}select:focus-visible{outline:2px solid var(--accent);outline-offset:3px}@media(max-width:760px){.tron-colors{margin-left:0}.tron-controls{gap:10px}.tron-controls select{margin-left:auto;max-width:70%}}
 
 .response-controls{display:flex;align-items:center;gap:16px;margin-top:18px;flex-wrap:wrap}.response-controls .note{margin:0}
+
+.visual-customization{margin:18px 0;padding:18px;border:1px solid var(--line,#ffffff18);border-radius:16px;background:#11141f}
+.visual-customization[hidden],.scene-colors label[hidden]{display:none}
+.customization-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.customization-heading h3{font-size:16px;margin:0;font-weight:500}.customization-heading button{font-size:12px;padding:10px;border:1px solid #ffffff22;border-radius:8px}
+.custom-color-toggle{display:flex;align-items:center;gap:8px;margin:16px 0;font-size:13px}
+.scene-colors{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px}.scene-colors label{display:flex;align-items:center;gap:8px;font-size:12px}
+.scene-colors input[type=color]{width:44px;height:36px;padding:2px;border:1px solid #ffffff22;border-radius:6px;background:transparent;cursor:pointer}
+.scene-colors input:disabled{opacity:.35;cursor:default}.scene-sliders{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media(max-width:520px){.scene-sliders{grid-template-columns:1fr;gap:0}.visual-customization{padding:14px}}

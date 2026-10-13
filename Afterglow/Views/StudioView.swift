@@ -38,7 +38,7 @@ struct StudioView: View {
         }
     }
     private var clockConfiguration: VisualizerClock.Configuration {
-        .init(speed: model.settings.speed,
+        .init(speed: model.settings.motionSpeed,
               paused: model.motionPaused || reduceMotion || scenePhase != .active)
     }
     @ViewBuilder private func workspace(size: CGSize, wide: Bool) -> some View {

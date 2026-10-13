@@ -97,6 +97,7 @@ struct StudioControlDeck: View {
             }
             Toggle("React to audio", isOn: $model.settings.audioReactive)
             if model.settings.style == .tron { TronControls() }
+            if !focused { VisualizerCustomizationControls() }
             if !focused {
                 Text("Find your atmosphere.").font(.system(size: 24, weight: .light, design: .rounded))
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -108,7 +109,7 @@ struct StudioControlDeck: View {
                     HStack(spacing: 8) { paletteButtons }
                     ScrollView(.horizontal, showsIndicators: false) { HStack(spacing: 8) { paletteButtons } }
                 }
-                slider("Motion", value: $model.settings.speed, range: 0.1...2)
+                if !model.settings.style.supportsCustomization { slider("Motion", value: $model.settings.speed, range: 0.1...2) }
                 slider("Glow", value: $model.settings.glow, range: 0...1)
                 Button { model.showSources = true } label: {
                     Label("Choose music", systemImage: "music.note.list").frame(maxWidth: .infinity, minHeight: 44)

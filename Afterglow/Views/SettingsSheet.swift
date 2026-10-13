@@ -42,9 +42,12 @@ struct InspectorView: View {
                     }
                 }
             }
+            VisualizerCustomizationControls()
             Divider()
             control("Sensitivity", value: $model.settings.sensitivity, range: 0.2...3, display: String(format: "%.1f×", model.settings.sensitivity))
-            control("Motion speed", value: $model.settings.speed, range: 0.1...2, display: String(format: "%.1f×", model.settings.speed))
+            if !model.settings.style.supportsCustomization {
+                control("Motion speed", value: $model.settings.speed, range: 0.1...2, display: String(format: "%.1f×", model.settings.speed))
+            }
             control("Glow", value: $model.settings.glow, range: 0...1, display: "\(Int(model.settings.glow * 100))%")
             control("Detail", value: $model.settings.detail, range: 0.2...1, display: "\(Int(model.settings.detail * 100))%")
             VStack(alignment: .leading, spacing: 12) {
@@ -87,6 +90,52 @@ struct InspectorView: View {
                 Text(display).font(.system(size: 10, design: .monospaced)).foregroundStyle(StudioTheme.muted)
             }
             Slider(value: value, in: range).accessibilityLabel(title)
+        }
+    }
+}
+
+/// A separate preset for each abstract/themed visualizer; all layouts share the model.
+struct VisualizerCustomizationControls: View {
+    @EnvironmentObject private var model: StudioModel
+    @Environment(\.self) private var environment
+    private var current: VisualizerCustomization { model.settings.customization(for: model.settings.style) }
+    private func update(_ change: (inout VisualizerCustomization) -> Void) {
+        var value = current; change(&value)
+        model.settings.customizations[model.settings.style.rawValue] = value.validated()
+    }
+    private func hex(_ color: Color) -> UInt32 {
+        let value = color.resolve(in: environment)
+        func byte(_ component: Float) -> UInt32 { UInt32((min(1, max(0, component)) * 255).rounded()) }
+        return byte(value.red) << 16 | byte(value.green) << 8 | byte(value.blue)
+    }
+    private var defaults: [UInt32] { model.settings.defaultColors(for: model.settings.style).map(hex) }
+    var body: some View {
+        if model.settings.style.supportsCustomization {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Customize \(model.settings.style.title)").font(.headline)
+                Toggle("Custom colors", isOn: Binding(get: { current.colors != nil }, set: { enabled in
+                    update { $0.colors = enabled ? defaults : nil }
+                }))
+                if current.colors != nil {
+                    ForEach(0..<(model.settings.style == .tron ? 1 : 3), id: \.self) { index in
+                        ColorPicker(["Primary color", "Secondary color", "Highlight color"][index], selection: Binding(get: {
+                            Color(hex: (current.colors ?? defaults)[index])
+                        }, set: { color in update { $0.colors = $0.colors ?? defaults; $0.colors?[index] = hex(color) } }), supportsOpacity: false)
+                    }
+                }
+                HStack { Text("Scene speed"); Spacer(); Text(String(format: "%.2f×", model.settings.motionSpeed)).monospacedDigit() }
+                Slider(value: $model.settings.motionSpeed, in: 0.1...2, step: 0.05).accessibilityLabel("Scene speed")
+                HStack { Text("Scene size"); Spacer(); Text("\(Int(current.size * 100))%").monospacedDigit() }
+                Slider(value: Binding(get: { current.size }, set: { size in update { $0.size = size } }), in: 0.5...1.5, step: 0.05)
+                    .accessibilityLabel("Scene size")
+                Text("Size zooms the scene around its center. Larger scenes may extend beyond the edges.")
+                    .font(.caption).foregroundStyle(StudioTheme.muted)
+                Button("Reset \(model.settings.style.title) customization") {
+                    model.settings.customizations.removeValue(forKey: model.settings.style.rawValue)
+                }.buttonStyle(.bordered)
+                Text("Only this visualizer changes. Use Save preferences locally to keep your setup.")
+                    .font(.caption).foregroundStyle(StudioTheme.muted)
+            }
         }
     }
 }

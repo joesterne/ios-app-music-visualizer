@@ -26,8 +26,11 @@ struct TronControls: View {
 
     @ViewBuilder private var colorButtons: some View {
         ForEach(TronPalette.allCases) { palette in
-            let selected = model.settings.tronPalette == palette
-            Button { model.settings.tronPalette = palette } label: {
+            let selected = model.settings.tronPalette == palette && model.settings.customization(for: .tron).colors == nil
+            Button {
+                model.settings.tronPalette = palette
+                model.settings.customizations[VisualizerStyle.tron.rawValue]?.colors = nil
+            } label: {
                 HStack(spacing: 7) {
                     Circle().fill(palette.color).frame(width: 12, height: 12)
                     Text(palette.title).font(.system(size: 11, weight: selected ? .semibold : .regular))

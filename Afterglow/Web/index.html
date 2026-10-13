@@ -23,6 +23,20 @@
 <section class="stage" aria-label="Visualizer"><canvas id="visual" aria-label="Animated music visualizer"></canvas><div class="stage-top"><span id="mode" class="badge">AMBIENT MOTION</span><button id="favorite" aria-label="Toggle favorite visualizer" style="font-size:23px;color:var(--accent)">♡</button></div><div class="stage-bottom"><div><h2 id="visual-name">Yosemite</h2><p id="visual-subtitle">Clouds over the valley</p></div><button id="expand" aria-label="Toggle immersive mode">⤢</button></div></section>
 <section class="control-deck" aria-label="Visualizer control deck"><h2 class="deck-title">Find your atmosphere.</h2><section id="tron-controls" class="tron-controls" aria-label="Tron options" hidden><span class="micro">TRON / ENTER THE GRID</span><select id="tron-mode" aria-label="Tron animation"><option value="lightCycles">Light cycles</option><option value="identityDiscs">Identity discs</option><option value="circuitExpansion">Circuit expansion</option></select><div class="tron-colors" aria-label="Tron colors"><button data-tron-color="Light blue" aria-pressed="true"><i style="background:#66deff"></i>Light blue</button><button data-tron-color="Orange" aria-pressed="false"><i style="background:#ff8c30"></i>Orange</button><button data-tron-color="Red" aria-pressed="false"><i style="background:#ff3347"></i>Red</button></div></section>
 <div class="response-controls"><label><input id="audio-reactive" type="checkbox" checked> React to audio</label><span class="note" id="response-note"></span></div>
+<section id="visual-customization" class="visual-customization" aria-label="Customize selected visualizer" hidden>
+<div class="customization-heading"><h3 id="customization-title">Customize visualizer</h3><button id="reset-visual-customization">Reset this visualizer</button></div>
+<label class="custom-color-toggle"><input type="checkbox" id="custom-colors"> Custom colors</label>
+<div class="scene-colors">
+<label id="scene-color-label-0">Primary <input type="color" id="scene-color-0" value="#91a1ff" aria-label="Primary scene color"></label>
+<label id="scene-color-label-1">Secondary <input type="color" id="scene-color-1" value="#cb79ff" aria-label="Secondary scene color"></label>
+<label id="scene-color-label-2">Highlight <input type="color" id="scene-color-2" value="#f3b0e6" aria-label="Highlight scene color"></label>
+</div>
+<div class="scene-sliders">
+<label class="control"><div><span>Scene speed</span><output id="scene-speed-value">0.65×</output></div><input id="scene-speed" type="range" min="0.1" max="2" step="0.05" value="0.65" aria-label="Scene speed"></label>
+<label class="control"><div><span>Scene size</span><output id="scene-size-value">100%</output></div><input id="scene-size" type="range" min="0.5" max="1.5" step="0.05" value="1" aria-label="Scene size"></label>
+</div>
+<p class="note">Only this visualizer changes. Size zooms from the center; larger scenes may extend beyond the edges. Use Save preferences locally in Visual settings to keep your setup.</p>
+</section>
 <div class="gallery-head"><span class="micro">VISUALIZERS</span><span class="micro" id="visual-count">09 / CHOOSE YOUR MOOD</span></div><div class="cards" id="gallery"></div><input id="gallery-scroll" type="range" min="0" max="100" step="0.1" value="0" aria-label="Scroll visualizers">
 <div class="duo-controls">
 <div class="duo-palette" id="duo-palettes" aria-label="Quick palettes"></div>
