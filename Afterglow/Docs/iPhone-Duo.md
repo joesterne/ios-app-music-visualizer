@@ -39,6 +39,8 @@ Rebuild the interactive wrapper with `python3 Scripts/build-duo-demo.py` after e
 
 ## Validation status
 
+Latest simulator results: [October 23, 2026 validation report](iPhone-Duo-Validation-2026-10-23.md), covering build, launch, fold layouts, pause continuity, and focus mode. The entries below are historical.
+
 Executed in Linux: Swift syntax parsing, JavaScript syntax checks, shared preview scheduler tests, pose/message continuity tests, demo tour and iframe-lifetime tests, actual Canvas-renderer frame checks, project/resource and asset integrity checks, and MP4 stream/duration validation. Representative closed, open, tabletop, and alternate-visual video frames were inspected.
 
 Local integration checked October 7, 2026: the complete portable suite passed, including 111 DOM interaction assertions, all 15 visualizer selections, audio-control regressions, Duo pose continuity, persistent iframe lifetime, and Canvas renderer checks. Native style/geometry, preference, and shared-clock regression checks passed with the Apple compiler. An unsigned Mac Debug build succeeded with Xcode 27.0. The preview and Duo demo were regenerated from their editable sources, and the Xcode project was regenerated.

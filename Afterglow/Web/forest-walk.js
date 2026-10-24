@@ -1,3 +1,4 @@
+/* exported renderForestWalk */
 "use strict";
 // Forest Walk is a pure clock-driven scene. Fixed pools and seeded encounter
 // windows keep pause/reduced motion deterministic and memory bounded.

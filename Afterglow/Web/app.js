@@ -7,7 +7,7 @@ const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reduce
 function motionStopped(){return paused||reducedMotion}
 let fps=60;
 let audioReactive=true;
-try{audioReactive=localStorage.getItem('afterglow.audioReactive')!=='false'}catch{}
+try{audioReactive=localStorage.getItem('afterglow.audioReactive')!=='false'}catch{ /* Storage may be unavailable; retain the defaults. */ }
 const haloOrders=new Map();
 function haloOrder(n){if(!haloOrders.has(n))haloOrders.set(n,Array.from({length:n},(_,i)=>i).sort((a,b)=>Math.sin(a/n*Math.PI*2)-Math.sin(b/n*Math.PI*2)));return haloOrders.get(n)}
 let style='yosemite',palette='Ultraviolet',source='ambient',paused=false,gain=1.25,speed=.65,glow=.6,detail=.65,time=7,last=0,activeMic=null,audioContext=null,analyzer=null,playerNode=null,micNode=null,objectURL=null;
@@ -52,7 +52,7 @@ let rawFrequency=null,rawWave=null,toastTimer=null;
 const tronModes = [['lightCycles','Light cycles','Neon riders. Endless trails.'],['identityDiscs','Identity discs','Spin. Rebound. Repeat.'],['circuitExpansion','Circuit expansion','A circuit that never stops growing.']];
 const tronColors = {'Light blue':'#66deff',Orange:'#ff8c30',Red:'#ff3347'};
 let tronMode='lightCycles',tronColor='Light blue';
-try { const saved=JSON.parse(localStorage.getItem('afterglow.tron')||'{}'); if(tronModes.some(m=>m[0]===saved.mode))tronMode=saved.mode; if(Object.hasOwn(tronColors,saved.color))tronColor=saved.color; } catch {}
+try { const saved=JSON.parse(localStorage.getItem('afterglow.tron')||'{}'); if(tronModes.some(m=>m[0]===saved.mode))tronMode=saved.mode; if(Object.hasOwn(tronColors,saved.color))tronColor=saved.color; } catch { /* Invalid stored Tron settings fall back to defaults. */ }
 function syncTron(){
   const active=style==='tron';$('tron-controls').hidden=!active;$('palettes').hidden=active;$('tron-palette-note').hidden=!active;$('palette-heading').textContent=active?'TRON COLOR':'COLOR PALETTE';
   document.documentElement.style.setProperty('--accent',customization().colors?.[0]||(active?tronColors[tronColor]:palettes[palette][0]));
@@ -554,4 +554,11 @@ $('reset-visual-customization').onclick=()=>{delete customizations[style];syncCo
 syncDuoControls();loadPreferences();syncTron();syncCustomization();
 motionPreference.addEventListener?.('change',event=>{reducedMotion=event.matches;last=0;updatePlay()});
 
-window.addEventListener('pagehide',()=>{++requestId;playPending=false;stopMic();audio.pause();if(animationRequest!==null)cancelAnimationFrame(animationRequest);animationRequest=null});
+// A cached page keeps its JavaScript state. Cancel capture requests on departure,
+// then refresh the stopped controls and renderer when browser history restores it.
+window.addEventListener('pagehide',()=>{
+ ++requestId;playPending=false;connectingInput=false;stopMic();audio.pause();clearSignal();
+ if(animationRequest!==null)cancelAnimationFrame(animationRequest);
+ animationRequest=null;last=0;lastDraw=null;
+});
+window.addEventListener('pageshow',()=>{updatePlay()});

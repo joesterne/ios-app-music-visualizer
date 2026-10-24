@@ -582,6 +582,12 @@
 			"path" = "Yosemite.md";
 			"sourceTree" = "<group>";
 		};
+		"536416DD56939B2DF5E9E4CB" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "net.daringfireball.markdown";
+			"path" = "iPhone-Duo-Validation-2026-10-23.md";
+			"sourceTree" = "<group>";
+		};
 		"C2513AF9B7BA871EF4FC2EB5" = {
 			"isa" = "PBXFileReference";
 			"lastKnownFileType" = "net.daringfireball.markdown";
@@ -602,6 +608,7 @@
 				"5624B3485DEBE2C3851DFFE6",
 				"F78D4DCBD0632449150ED0B4",
 				"6BCF339F16C6E23AE2F017FE",
+				"536416DD56939B2DF5E9E4CB",
 				"C2513AF9B7BA871EF4FC2EB5",
 			);
 			"path" = "Docs";
