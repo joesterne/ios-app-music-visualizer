@@ -1,3 +1,4 @@
+/* exported renderMinecraft */
 "use strict";
 // Minecraft is a clock-driven block world. Terrain, trees, torches, creepers and
 // ores are derived from world-column seeds, so pause and Reduce Motion freeze the

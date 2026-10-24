@@ -208,10 +208,11 @@ To repeat the portable checks with the same locked development dependencies:
 
 ```bash
 npm ci --ignore-scripts --no-audit --no-fund
+npm run lint
 npm test
 ```
 
-Use Node 24 or later, Python 3, and a C compiler. Dependencies are development-only; the shipped app and offline preview do not load npm packages. `npm test` runs all portable checks and stops on the first failure. CI also rebuilds the previews and rejects stale generated HTML.
+Use Node 24 or later, Python 3, and a C compiler. Dependencies are development-only; the shipped app and offline preview do not load npm packages. `npm run lint` applies ESLint recommended correctness rules to the editable browser scripts, with zero warnings allowed. `npm test` runs lint followed by all portable checks and stops on the first failure. CI also rebuilds the previews and rejects stale generated HTML.
 
 ## Verification commands
 

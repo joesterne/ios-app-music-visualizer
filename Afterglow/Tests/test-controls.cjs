@@ -110,6 +110,19 @@ async function fixture(storage=new Map()){
  a.media.motion({matches:true});tick();check(d.getElementById('pause-motion').disabled&&a.raf.size===0,'Reduce Motion change suspends ambient animation');
  run("source='local';audio.pause();paused=true;clearSignal();requestRender()");const readsBefore=a.reads();tick();check(a.reads()===readsBefore&&a.raf.size===0,'paused audio and motion perform no analysis or idle redraw');
  check(a.media.errors.length===0,'no uncaught UI event errors');a.close();
+ // Navigating away while permission is pending must not leave a cached page stuck connecting.
+ const restored=await fixture();
+ const pendingCapture=restored.w.selectSource('mic');await restored.settle();
+ restored.w.dispatchEvent(new restored.w.Event('pagehide'));
+ check(!restored.run('connectingInput'),'pagehide clears pending microphone state');
+ let staleStops=0;
+ restored.media.pending.resolve({getTracks:()=>[{stop(){staleStops++}}]});await pendingCapture;
+ check(staleStops===1&&restored.run('activeMic')===null,'late permission cannot restart capture after pagehide');
+ restored.w.dispatchEvent(new restored.w.Event('pageshow'));
+ check(restored.d.getElementById('play').getAttribute('aria-label')==='Start microphone','restored page offers microphone reconnect');
+ check(restored.raf.size===1,'restored page schedules a frame without requiring a visibility event');
+ check(restored.run('audio.paused'),'restoring a page does not autoplay audio');
+ restored.close();
  const corrupt=await fixture(new Map([[key,'not json']]));check(corrupt.run('style')==='yosemite','corrupt storage recovers defaults');corrupt.close();
  console.log('PASS:',checks,'DOM interaction assertions; controls, local persistence, corruption/blocking, async races, coalesced thumbnails, idle/Reduce Motion.');
 })().catch(error=>{console.error(error);process.exitCode=1});

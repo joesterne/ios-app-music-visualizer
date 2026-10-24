@@ -121,7 +121,8 @@ body.immersive .stage{height:100dvh;width:100dvw}
 </div>
 <footer><div class="art" aria-hidden="true">♪</div><div class="track"><strong id="track-title">Make room for the music.</strong><small id="track-detail">Choose a source. Find your visual.</small></div><div class="transport"><button class="restart" id="restart" aria-label="Restart track" disabled>↤</button><button class="play" id="play" aria-label="Pause motion">Ⅱ</button></div><input class="seek" type="range" id="seek" min="0" max="1" step="0.001" value="0" aria-label="Playback position"><label class="volume">♪ <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Playback volume"></label></footer>
 <input id="preference-file" type="file" accept="application/json,.json" hidden><input id="file" type="file" accept="audio/*"><div id="toast" class="toast" role="status" hidden></div>
-<script>"use strict";
+<script>/* exported renderForestWalk */
+"use strict";
 // Forest Walk is a pure clock-driven scene. Fixed pools and seeded encounter
 // windows keep pause/reduced motion deterministic and memory bounded.
 function forestRandom(seed) {
@@ -231,6 +232,7 @@ function renderForestWalk(canvas,time,bands,small=false) {
  ctx.restore();
 }
 
+/* exported renderMinecraft */
 "use strict";
 // Minecraft is a clock-driven block world. Terrain, trees, torches, creepers and
 // ores are derived from world-column seeds, so pause and Reduce Motion freeze the
@@ -351,7 +353,7 @@ const motionPreference=matchMedia('(prefers-reduced-motion: reduce)');let reduce
 function motionStopped(){return paused||reducedMotion}
 let fps=60;
 let audioReactive=true;
-try{audioReactive=localStorage.getItem('afterglow.audioReactive')!=='false'}catch{}
+try{audioReactive=localStorage.getItem('afterglow.audioReactive')!=='false'}catch{ /* Storage may be unavailable; retain the defaults. */ }
 const haloOrders=new Map();
 function haloOrder(n){if(!haloOrders.has(n))haloOrders.set(n,Array.from({length:n},(_,i)=>i).sort((a,b)=>Math.sin(a/n*Math.PI*2)-Math.sin(b/n*Math.PI*2)));return haloOrders.get(n)}
 let style='yosemite',palette='Ultraviolet',source='ambient',paused=false,gain=1.25,speed=.65,glow=.6,detail=.65,time=7,last=0,activeMic=null,audioContext=null,analyzer=null,playerNode=null,micNode=null,objectURL=null;
@@ -396,7 +398,7 @@ let rawFrequency=null,rawWave=null,toastTimer=null;
 const tronModes = [['lightCycles','Light cycles','Neon riders. Endless trails.'],['identityDiscs','Identity discs','Spin. Rebound. Repeat.'],['circuitExpansion','Circuit expansion','A circuit that never stops growing.']];
 const tronColors = {'Light blue':'#66deff',Orange:'#ff8c30',Red:'#ff3347'};
 let tronMode='lightCycles',tronColor='Light blue';
-try { const saved=JSON.parse(localStorage.getItem('afterglow.tron')||'{}'); if(tronModes.some(m=>m[0]===saved.mode))tronMode=saved.mode; if(Object.hasOwn(tronColors,saved.color))tronColor=saved.color; } catch {}
+try { const saved=JSON.parse(localStorage.getItem('afterglow.tron')||'{}'); if(tronModes.some(m=>m[0]===saved.mode))tronMode=saved.mode; if(Object.hasOwn(tronColors,saved.color))tronColor=saved.color; } catch { /* Invalid stored Tron settings fall back to defaults. */ }
 function syncTron(){
   const active=style==='tron';$('tron-controls').hidden=!active;$('palettes').hidden=active;$('tron-palette-note').hidden=!active;$('palette-heading').textContent=active?'TRON COLOR':'COLOR PALETTE';
   document.documentElement.style.setProperty('--accent',customization().colors?.[0]||(active?tronColors[tronColor]:palettes[palette][0]));
@@ -898,6 +900,13 @@ $('reset-visual-customization').onclick=()=>{delete customizations[style];syncCo
 syncDuoControls();loadPreferences();syncTron();syncCustomization();
 motionPreference.addEventListener?.('change',event=>{reducedMotion=event.matches;last=0;updatePlay()});
 
-window.addEventListener('pagehide',()=>{++requestId;playPending=false;stopMic();audio.pause();if(animationRequest!==null)cancelAnimationFrame(animationRequest);animationRequest=null});
+// A cached page keeps its JavaScript state. Cancel capture requests on departure,
+// then refresh the stopped controls and renderer when browser history restores it.
+window.addEventListener('pagehide',()=>{
+ ++requestId;playPending=false;connectingInput=false;stopMic();audio.pause();clearSignal();
+ if(animationRequest!==null)cancelAnimationFrame(animationRequest);
+ animationRequest=null;last=0;lastDraw=null;
+});
+window.addEventListener('pageshow',()=>{updatePlay()});
 </script>
 </body></html>
