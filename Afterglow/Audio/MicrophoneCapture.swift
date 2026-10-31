@@ -6,7 +6,7 @@ final class MicrophoneCapture {
     private let analyzer: AudioAnalyzer
     init(analyzer: AudioAnalyzer) { self.analyzer = analyzer }
 
-    func start() async throws {
+    func start(alongsidePlayback: Bool = false, isCurrent: () -> Bool = { true }) async throws {
         let granted: Bool
         #if os(iOS)
         granted = await withCheckedContinuation { continuation in
@@ -19,10 +19,11 @@ final class MicrophoneCapture {
             throw AfterglowError.message("Microphone access is off. Enable it for Afterglow in system privacy settings, then try again.")
         }
         try Task.checkCancellation()
-        stop()
+        guard isCurrent() else { throw CancellationError() }
+        stop(deactivateSession: !alongsidePlayback)
         #if os(iOS)
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .measurement,
+        try session.setCategory(.playAndRecord, mode: alongsidePlayback ? .default : .measurement,
                                 options: [.mixWithOthers, .defaultToSpeaker, .allowBluetooth])
         try session.setActive(true)
         #endif
@@ -42,11 +43,13 @@ final class MicrophoneCapture {
             throw error
         }
     }
-    func stop() {
+    func stop(deactivateSession: Bool = true) {
         engine?.inputNode.removeTap(onBus: 0)
         engine?.stop(); engine = nil
         #if os(iOS)
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        if deactivateSession {
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        }
         #endif
     }
 }

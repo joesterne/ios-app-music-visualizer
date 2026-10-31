@@ -84,7 +84,7 @@ final class AppleMusicService: ObservableObject {
         libraryOffset += page.count
         hasMoreLibrary = page.count == 100
     }
-    func play(_ song: Song, within songs: [Song], fromCatalog: Bool) async throws {
+    func play(_ song: Song, within songs: [Song], fromCatalog: Bool, microphoneActive: Bool = false) async throws {
         guard configured, authorized else { throw AfterglowError.message("Connect Apple Music first.") }
         if fromCatalog && !canPlayCatalog {
             throw AfterglowError.message("An active Apple Music subscription is required to play catalog songs.")
@@ -92,20 +92,29 @@ final class AppleMusicService: ObservableObject {
         guard song.playParameters != nil else {
             throw AfterglowError.message("Apple Music can’t play this song with the current account or in this region.")
         }
-        #if os(iOS)
-        try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [])
-        try AVAudioSession.sharedInstance().setActive(true)
-        #endif
+        try prepareAudioSession(microphoneActive: microphoneActive)
         player.queue = ApplicationMusicPlayer.Queue(for: songs.isEmpty ? [song] : songs, startingAt: song)
         try await player.play()
     }
-    func toggle() async throws {
+    func toggle(microphoneActive: Bool = false) async throws {
         guard configured, authorized else { throw AfterglowError.message("Open Music Sources and connect Apple Music before using playback controls.") }
-        if isPlaying { player.pause() } else { try await player.play() }
+        if isPlaying { player.pause() } else {
+            try prepareAudioSession(microphoneActive: microphoneActive)
+            try await player.play()
+        }
     }
     func skip(forward: Bool) async throws {
         guard configured, authorized else { throw AfterglowError.message("Open Music Sources and connect Apple Music before using playback controls.") }
         if forward { try await player.skipToNextEntry() } else { try await player.skipToPreviousEntry() }
+    }
+    func prepareAudioSession(microphoneActive: Bool) throws {
+        #if os(iOS)
+        // Keep the input node connected while MusicKit starts/resumes playback.
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(microphoneActive ? .playAndRecord : .playback, mode: .default,
+                                options: microphoneActive ? [.mixWithOthers, .defaultToSpeaker, .allowBluetooth] : [])
+        try session.setActive(true)
+        #endif
     }
     func pause() { if configured { player.pause() } }
     func seek(to value: Double) { if configured { player.playbackTime = max(0, min(value, duration)) } }
