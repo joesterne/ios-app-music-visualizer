@@ -1,5 +1,7 @@
 import Foundation
 
+// MIRROR: Hand-mirrored by the Web preview (Afterglow/Web/minecraft.js).
+// Layout/seed changes must be made in BOTH implementations.
 /// Block-world layout derived from world-column seeds, shared with `Web/minecraft.js`.
 /// Nothing is stored between frames, so pause is exact and long sessions stay bounded.
 enum MinecraftGeometry {

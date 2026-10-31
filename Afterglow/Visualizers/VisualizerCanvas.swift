@@ -1,5 +1,8 @@
 import SwiftUI
 
+// MIRROR: The scene renderers in this file are hand-mirrored by the Web preview
+// (Afterglow/Web/app.js). Scene changes must be made in BOTH implementations —
+// only the rendering tests catch drift between them.
 struct VisualizerCanvas: View, Equatable {
     var style: VisualizerStyle
     var palette: VisualPalette

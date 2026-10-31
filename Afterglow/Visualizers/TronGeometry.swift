@@ -1,5 +1,7 @@
 import Foundation
 
+// MIRROR: Hand-mirrored by the Web preview (Afterglow/Web/app.js, Tron section).
+// Geometry/seed changes must be made in BOTH implementations.
 // Pure geometry, independent of SwiftUI and the audio source. All distances are
 // normalized so the effects retain their proportions on phones and tablets.
 struct TronPoint: Equatable, Sendable {

@@ -39,6 +39,11 @@ enum LocalLibrary {
                 try FileManager.default.copyItem(at: original, to: destination)
                 let audio = try AVAudioFile(forReading: destination)
                 guard audio.length > 0 else { throw AfterglowError.message("The file is empty.") }
+                // A malformed file can report a 0 sample rate; dividing by it
+                // stored duration = .infinity in library.json, which later
+                // trapped on Int(track.duration) when rendering the track
+                // list. LocalAudioPlayer.load guards the same value.
+                guard audio.processingFormat.sampleRate > 0 else { throw AfterglowError.message("The file has no readable audio stream.") }
                 return LocalTrack(id: id, title: original.deletingPathExtension().lastPathComponent,
                                   filename: destination.lastPathComponent,
                                   duration: Double(audio.length) / audio.processingFormat.sampleRate)

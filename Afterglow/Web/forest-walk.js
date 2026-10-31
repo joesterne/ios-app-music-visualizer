@@ -1,4 +1,6 @@
 "use strict";
+// MIRROR: Hand-mirrors the Swift renderer (Afterglow/Visualizers/ForestWalkGeometry.swift).
+// Scene changes must be made in BOTH implementations.
 // Forest Walk is a pure clock-driven scene. Fixed pools and seeded encounter
 // windows keep pause/reduced motion deterministic and memory bounded.
 function forestRandom(seed) {

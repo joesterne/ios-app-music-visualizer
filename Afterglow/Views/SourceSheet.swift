@@ -92,7 +92,7 @@ struct SourceSheet: View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Your Spotify session stays in Spotify. Start your music there, return to Afterglow, and choose a visual. The animation runs independently of the track.")
                     .font(.system(size: 13)).foregroundStyle(StudioTheme.muted)
-                Button { openURL(URL(string: "https://open.spotify.com/")!) } label: {
+                Button { if let spotifyURL = URL(string: "https://open.spotify.com/") { openURL(spotifyURL) } } label: {
                     Label("Open Spotify", systemImage: "arrow.up.right")
                 }.buttonStyle(.borderedProminent)
                 Text("No Spotify login, playback control, or audio analysis is performed by this companion mode.")
@@ -101,9 +101,13 @@ struct SourceSheet: View {
         case .other:
             VStack(spacing: 10) {
                 ForEach(ExternalService.all) { service in
-                    Link(destination: service.url) {
-                        HStack { Text(service.name); Spacer(); Image(systemName: "arrow.up.right") }
-                            .font(.system(size: 13)).padding(16).background(StudioTheme.panel, in: RoundedRectangle(cornerRadius: 12))
+                    // url is optional now (no force-unwrap): a malformed
+                    // address renders as a dead row instead of crashing on tap.
+                    if let url = service.url {
+                        Link(destination: url) {
+                            HStack { Text(service.name); Spacer(); Image(systemName: "arrow.up.right") }
+                                .font(.system(size: 13)).padding(16).background(StudioTheme.panel, in: RoundedRectangle(cornerRadius: 12))
+                        }
                     }
                 }
                 Text("Playback stays in the selected service. Use ambient visuals here, or live input for sound played through speakers. Capturable system audio is also available on Mac.")
@@ -142,7 +146,7 @@ private struct ExternalService: Identifiable {
     var name: String
     var address: String
     var id: String { name }
-    var url: URL { URL(string: address)! }
+    var url: URL? { URL(string: address) }
     static let all = [
         Self(name: "YouTube Music", address: "https://music.youtube.com/"),
         Self(name: "TIDAL", address: "https://listen.tidal.com/"),

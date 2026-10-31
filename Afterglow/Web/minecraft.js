@@ -1,4 +1,6 @@
 "use strict";
+// MIRROR: Hand-mirrors the Swift renderer (Afterglow/Visualizers/MinecraftGeometry.swift).
+// Layout/seed changes must be made in BOTH implementations.
 // Minecraft is a clock-driven block world. Terrain, trees, torches, creepers and
 // ores are derived from world-column seeds, so pause and Reduce Motion freeze the
 // scene exactly and long sessions never accumulate state.

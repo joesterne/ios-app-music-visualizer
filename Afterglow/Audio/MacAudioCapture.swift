@@ -127,9 +127,17 @@ final class MacOutputVolume: ObservableObject {
             nextVolumes = [requested]
         } else {
             let current = Float32(average(channelVolumes))
-            // Scale each channel rather than assigning an identical value, retaining balance.
-            let multiplier = current > 0 ? requested / current : requested
-            nextVolumes = channelVolumes.map { min(1, max(0, $0 * multiplier)) }
+            if current > 0 {
+                // Scale each channel rather than assigning an identical value, retaining balance.
+                let multiplier = requested / current
+                nextVolumes = channelVolumes.map { min(1, max(0, $0 * multiplier)) }
+            } else {
+                // All channels are at zero, so scaling can never raise them
+                // (0 * anything = 0) and the slider appeared broken on
+                // devices with only per-channel volume. Balance is
+                // meaningless at zero — assign the requested level uniformly.
+                nextVolumes = channelVolumes.map { _ in requested }
+            }
         }
 
         for (index, address) in volumeAddresses.enumerated() {

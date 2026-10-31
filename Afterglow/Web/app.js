@@ -1,3 +1,6 @@
+// MIRROR: This preview hand-mirrors the Swift renderers (Afterglow/Visualizers/
+// VisualizerCanvas.swift and TronGeometry.swift). Scene changes must be made in
+// BOTH implementations — only the rendering tests catch drift between them.
 
 "use strict";
 const $=id=>document.getElementById(id);
@@ -113,7 +116,7 @@ function requestThumbnails(){thumbnailsDirty=true;requestRender()}
 function requestRender(){needsRedraw=true;if(!document.hidden&&animationRequest===null)animationRequest=requestAnimationFrame(tick)}
 function configureBands(){const upper=Math.min(16000,audioContext.sampleRate*.48);for(let i=0;i<64;i++){bandStarts[i]=Math.max(1,Math.floor(40*(upper/40)**(i/64)/audioContext.sampleRate*analyzer.fftSize));bandEnds[i]=Math.min(rawFrequency.length-1,Math.ceil(40*(upper/40)**((i+1)/64)/audioContext.sampleRate*analyzer.fftSize))}}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,8500)}
-function pickStyle(next){const s=styles.find(v=>v[0]===next);if(!s)return;requestRender();style=next;$('visual-name').textContent=s[1];$('visual-subtitle').textContent=s[2];document.querySelectorAll('.card').forEach(el=>{el.classList.toggle('active',el.dataset.style===style);el.setAttribute('aria-pressed',el.dataset.style===style)});updateFavorite();syncTron();syncCustomization();syncControls();if(window.parent!==window)window.parent?.postMessage?.({type:'afterglow-demo-state',visual:style},'*')}
+function pickStyle(next){const s=styles.find(v=>v[0]===next);if(!s)return;requestRender();style=next;$('visual-name').textContent=s[1];$('visual-subtitle').textContent=s[2];document.querySelectorAll('.card').forEach(el=>{el.classList.toggle('active',el.dataset.style===style);el.setAttribute('aria-pressed',el.dataset.style===style)});updateFavorite();syncTron();syncCustomization();syncControls();if(window.parent!==window)window.parent?.postMessage?.({type:'afterglow-demo-state',visual:style},window.location.origin)}
 function updateFavorite(){$('favorite').textContent=favorites.has(style)?'♥':'♡';$('favorite').setAttribute('aria-pressed',favorites.has(style))}
 function pickPalette(next){if(!Object.hasOwn(palettes,next))return;requestRender();palette=next;document.documentElement.style.setProperty('--accent',palettes[palette][0]);document.querySelectorAll('.palette').forEach(el=>el.classList.toggle('active',el.dataset.palette===palette));requestThumbnails();if($('duo-speed'))syncDuoControls();syncTron();syncCustomization()}
 $('visual-count').textContent=String(styles.length).padStart(2,'0')+' / CHOOSE YOUR MOOD';

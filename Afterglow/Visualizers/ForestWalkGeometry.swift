@@ -1,5 +1,7 @@
 import Foundation
 
+// MIRROR: Hand-mirrored by the Web preview (Afterglow/Web/forest-walk.js).
+// Scene changes must be made in BOTH implementations.
 /// Clock-derived encounters need no timers or growing particle collections.
 /// The same seeds are used by the browser preview. A ten-second window contains
 /// at most one animal, with variable arrival, duration, species and trail side.
