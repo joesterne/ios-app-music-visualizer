@@ -122,6 +122,8 @@ body.immersive .stage{height:100dvh;width:100dvw}
 <footer><div class="art" aria-hidden="true">♪</div><div class="track"><strong id="track-title">Make room for the music.</strong><small id="track-detail">Choose a source. Find your visual.</small></div><div class="transport"><button class="restart" id="restart" aria-label="Restart track" disabled>↤</button><button class="play" id="play" aria-label="Pause motion">Ⅱ</button></div><input class="seek" type="range" id="seek" min="0" max="1" step="0.001" value="0" aria-label="Playback position"><label class="volume">♪ <input type="range" id="volume" min="0" max="1" step="0.01" value="0.8" aria-label="Playback volume"></label></footer>
 <input id="preference-file" type="file" accept="application/json,.json" hidden><input id="file" type="file" accept="audio/*"><div id="toast" class="toast" role="status" hidden></div>
 <script>"use strict";
+// MIRROR: Hand-mirrors the Swift renderer (Afterglow/Visualizers/ForestWalkGeometry.swift).
+// Scene changes must be made in BOTH implementations.
 // Forest Walk is a pure clock-driven scene. Fixed pools and seeded encounter
 // windows keep pause/reduced motion deterministic and memory bounded.
 function forestRandom(seed) {
@@ -232,6 +234,8 @@ function renderForestWalk(canvas,time,bands,small=false) {
 }
 
 "use strict";
+// MIRROR: Hand-mirrors the Swift renderer (Afterglow/Visualizers/MinecraftGeometry.swift).
+// Layout/seed changes must be made in BOTH implementations.
 // Minecraft is a clock-driven block world. Terrain, trees, torches, creepers and
 // ores are derived from world-column seeds, so pause and Reduce Motion freeze the
 // scene exactly and long sessions never accumulate state.
@@ -342,6 +346,9 @@ function renderMinecraft(canvas,time,bands,small=false) {
  ctx.restore();
 }
 
+// MIRROR: This preview hand-mirrors the Swift renderers (Afterglow/Visualizers/
+// VisualizerCanvas.swift and TronGeometry.swift). Scene changes must be made in
+// BOTH implementations — only the rendering tests catch drift between them.
 
 "use strict";
 const $=id=>document.getElementById(id);
@@ -457,7 +464,7 @@ function requestThumbnails(){thumbnailsDirty=true;requestRender()}
 function requestRender(){needsRedraw=true;if(!document.hidden&&animationRequest===null)animationRequest=requestAnimationFrame(tick)}
 function configureBands(){const upper=Math.min(16000,audioContext.sampleRate*.48);for(let i=0;i<64;i++){bandStarts[i]=Math.max(1,Math.floor(40*(upper/40)**(i/64)/audioContext.sampleRate*analyzer.fftSize));bandEnds[i]=Math.min(rawFrequency.length-1,Math.ceil(40*(upper/40)**((i+1)/64)/audioContext.sampleRate*analyzer.fftSize))}}
 function toast(message){$('toast').textContent=message;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,8500)}
-function pickStyle(next){const s=styles.find(v=>v[0]===next);if(!s)return;requestRender();style=next;$('visual-name').textContent=s[1];$('visual-subtitle').textContent=s[2];document.querySelectorAll('.card').forEach(el=>{el.classList.toggle('active',el.dataset.style===style);el.setAttribute('aria-pressed',el.dataset.style===style)});updateFavorite();syncTron();syncCustomization();syncControls();if(window.parent!==window)window.parent?.postMessage?.({type:'afterglow-demo-state',visual:style},'*')}
+function pickStyle(next){const s=styles.find(v=>v[0]===next);if(!s)return;requestRender();style=next;$('visual-name').textContent=s[1];$('visual-subtitle').textContent=s[2];document.querySelectorAll('.card').forEach(el=>{el.classList.toggle('active',el.dataset.style===style);el.setAttribute('aria-pressed',el.dataset.style===style)});updateFavorite();syncTron();syncCustomization();syncControls();if(window.parent!==window)window.parent?.postMessage?.({type:'afterglow-demo-state',visual:style},window.location.origin)}
 function updateFavorite(){$('favorite').textContent=favorites.has(style)?'♥':'♡';$('favorite').setAttribute('aria-pressed',favorites.has(style))}
 function pickPalette(next){if(!Object.hasOwn(palettes,next))return;requestRender();palette=next;document.documentElement.style.setProperty('--accent',palettes[palette][0]);document.querySelectorAll('.palette').forEach(el=>el.classList.toggle('active',el.dataset.palette===palette));requestThumbnails();if($('duo-speed'))syncDuoControls();syncTron();syncCustomization()}
 $('visual-count').textContent=String(styles.length).padStart(2,'0')+' / CHOOSE YOUR MOOD';
