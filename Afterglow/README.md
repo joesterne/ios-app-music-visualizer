@@ -291,3 +291,23 @@ Aurora, Spectrum, Orbit, Waveform, Tunnel, Constellation, Terrain, Bloom, Tron, 
 - **Reset this visualizer:** removes only that scene's overrides. Other scenes keep their settings.
 
 Use **Save preferences locally** to retain all scene overrides across launches. Browser JSON export/import includes these settings. Older saved preferences retain their existing palettes and speed until you customize a scene. Other visualizers retain their existing controls.
+
+### Equalizer response with Apple Music or Spotify
+
+On iPad/iPhone, selecting a streaming service alone does not supply audio samples.
+Open **Music sources**, select **Apple Music**, **Spotify**, or **Other music apps**,
+then choose **React through microphone** and allow microphone access. Play through
+speakers and select **Spectrum** or **Stereo** to see the measured frequency levels.
+The input meter confirms whether sound is reaching the app. Sensitivity adjusts the
+visual response; the microphone also hears other sounds in the room.
+
+Microphone response stays separate from playback controls and stops when you leave
+the app, change sources, or disconnect Apple Music. It is never saved or resumed
+automatically. No recording is saved. Music playing only in headphones is not audible
+to the microphone. For direct analysis through headphones, import an unprotected audio
+file; on Mac, system audio can also measure audio the OS permits from other apps.
+
+Regression coverage: `bash Scripts/test-audio-response.sh` exercises the production
+model with capture/player doubles and the real PCM analyzer, including loudness,
+frequency, silence, permission races, and capture cleanup. It does not substitute for
+physical-device MusicKit/Spotify playback and permission testing.

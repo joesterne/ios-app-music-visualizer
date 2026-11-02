@@ -14,6 +14,7 @@ if (( sdk_major < 27 || (sdk_major == 27 && sdk_minor < 1) )); then
   exit 1
 fi
 bash Scripts/test-dsp.sh
+bash Scripts/test-audio-response.sh
 bash Scripts/test-tron.sh
 bash Scripts/test-forest.sh
 bash Scripts/test-minecraft.sh

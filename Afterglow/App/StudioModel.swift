@@ -18,6 +18,7 @@ final class StudioModel: ObservableObject {
     @Published private(set) var subtitle = "Choose a source. Find your visual."
     @Published private(set) var busy = false
     @Published private(set) var importing = false
+    @Published private(set) var microphoneResponseActive = false
     @Published var error: String?
     @Published var showSources = false
     @Published var showSettings = false
@@ -72,13 +73,20 @@ final class StudioModel: ObservableObject {
         })
         #endif
     }
-    var visualsReactive: Bool { settings.audioReactive && source.reactive }
-    var modeLabel: String { visualsReactive ? (isPlaying ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION" }
+    var supportsMicrophoneResponse: Bool { source == .appleMusic || source == .spotify || source == .other }
+    // Capture activity is independent of the streaming player's transport state.
+    var visualAudioActive: Bool { microphoneResponseActive || isPlaying }
+    var visualsReactive: Bool { settings.audioReactive && (source.reactive || microphoneResponseActive) }
+    var modeLabel: String {
+        if visualsReactive && microphoneResponseActive { return "LIVE MICROPHONE" }
+        return visualsReactive ? (visualAudioActive ? "LIVE AUDIO" : "AUDIO IDLE") : "AMBIENT MOTION"
+    }
     var hasPlayableQueue: Bool {
         source == .local ? selectedTrack != nil && !tracks.isEmpty : source == .appleMusic && apple.hasCurrentEntry
     }
     var modeDescription: String {
-        visualsReactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
+        if visualsReactive && microphoneResponseActive { return "Measured microphone • 64 frequency bands • speakers required" }
+        return visualsReactive ? "Measured audio • 64 frequency bands" : "Independent animation • not beat-synced"
     }
     @Published private(set) var artworkURL: URL?
 
@@ -92,6 +100,7 @@ final class StudioModel: ObservableObject {
         guard next != source else { return }
         sourceRevision += 1
         local.stop(); apple.pause(); microphone.stop()
+        microphoneResponseActive = false
         #if os(macOS)
         await system.stop()
         #endif
@@ -157,7 +166,7 @@ final class StudioModel: ObservableObject {
         busy = true; defer { busy = false; refreshMetadata() }
         do {
             try await prepareSource(.appleMusic)
-            try await apple.play(song, within: queue, fromCatalog: catalog)
+            try await apple.play(song, within: queue, fromCatalog: catalog, microphoneActive: microphoneResponseActive)
             #if os(iOS)
             if !active { apple.pause() }
             #endif
@@ -183,7 +192,7 @@ final class StudioModel: ObservableObject {
                 if tracks.isEmpty { showImporter = true; return }
                 if local.isPlaying { local.pause(); analyzer.reset() }
                 else { try local.play() }
-            case .appleMusic: try await apple.toggle()
+            case .appleMusic: try await apple.toggle(microphoneActive: microphoneResponseActive)
             case .microphone, .systemAudio:
                 if isPlaying {
                     microphone.stop()
@@ -238,13 +247,55 @@ final class StudioModel: ObservableObject {
         if phase == .inactive && awaitingCapturePermission { return }
         await setActive(phase == .active)
     }
-    private func startMicrophone() async throws {
+    private func startMicrophone(alongsidePlayback: Bool = false) async throws {
+        let revision = sourceRevision
         awaitingCapturePermission = true
         defer { awaitingCapturePermission = false }
-        try await microphone.start()
+        try await microphone.start(alongsidePlayback: alongsidePlayback) {
+            self.active && revision == self.sourceRevision
+        }
+    }
+    /// Explicit opt-in: never save or automatically resume a microphone session.
+    func toggleMicrophoneResponse() async {
+        guard supportsMicrophoneResponse, !busy else { return }
+        busy = true
+        defer { busy = false; refreshMetadata() }
+        if microphoneResponseActive {
+            stopMicrophoneResponse()
+            if source == .appleMusic { try? apple.prepareAudioSession(microphoneActive: false) }
+            return
+        }
+        do {
+            try await startMicrophone(alongsidePlayback: true)
+            microphoneResponseActive = true
+            settings.audioReactive = true
+        } catch {
+            microphone.stop(deactivateSession: source != .appleMusic)
+            analyzer.reset()
+            if active, source == .appleMusic, !(error is CancellationError) {
+                try? apple.prepareAudioSession(microphoneActive: false)
+            }
+            if !(error is CancellationError) { self.error = error.localizedDescription }
+        }
+    }
+    private func stopMicrophoneResponse() {
+        guard microphoneResponseActive else { return }
+        microphoneResponseActive = false
+        microphone.stop(deactivateSession: source != .appleMusic)
+        analyzer.reset()
+    }
+    func disconnectAppleMusic() {
+        sourceRevision += 1
+        stopMicrophoneResponse()
+        apple.clearSession()
+        refreshMetadata()
     }
     func setActive(_ value: Bool) async {
         active = value
+        if !value {
+            sourceRevision += 1
+            stopMicrophoneResponse()
+        }
         #if os(iOS)
         if !value {
             // This foreground visualizer intentionally does not request background microphone capture.
@@ -257,6 +308,8 @@ final class StudioModel: ObservableObject {
         refreshMetadata()
     }
     private func handleAudioInterruption() async {
+        sourceRevision += 1
+        stopMicrophoneResponse()
         local.pause(); apple.pause()
         if source == .microphone { microphone.stop(); isPlaying = false }
         analyzer.reset()

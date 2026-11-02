@@ -57,7 +57,7 @@ struct DuoWorkspaceView: View {
         GeometryReader { _ in
             ZStack(alignment: .bottomLeading) {
                 VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
-                                 analyzer: model.analyzer, playing: model.isPlaying,
+                                 analyzer: model.analyzer, playing: model.visualAudioActive,
                                  reactive: model.visualsReactive, settings: model.settings,
                                  paused: model.motionPaused, clock: clock)
                     .equatable()

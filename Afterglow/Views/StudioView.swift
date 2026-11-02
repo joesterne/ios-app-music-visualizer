@@ -119,7 +119,7 @@ struct StudioView: View {
     private func visualStage(height: Double) -> some View {
         ZStack {
             VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
-                             analyzer: model.analyzer, playing: model.isPlaying,
+                             analyzer: model.analyzer, playing: model.visualAudioActive,
                              reactive: model.visualsReactive, settings: model.settings, paused: model.motionPaused, clock: visualClock)
                 .equatable()
             VStack(alignment: .leading) {
@@ -245,7 +245,7 @@ struct SignalBadge: View {
     @EnvironmentObject private var model: StudioModel
     var body: some View {
         HStack(spacing: 7) {
-            Circle().fill(model.source.reactive && model.isPlaying ? Color(hex: 0x7DE0B9) : model.settings.accent)
+            Circle().fill(model.visualsReactive && model.visualAudioActive ? Color(hex: 0x7DE0B9) : model.settings.accent)
                 .frame(width: 5, height: 5)
             Text(model.modeLabel).font(.system(size: 8, weight: .medium, design: .monospaced)).tracking(1.2)
         }.padding(.horizontal, 11).padding(.vertical, 8)
@@ -261,7 +261,7 @@ struct ImmersiveView: View {
     var body: some View {
         ZStack {
             VisualizerCanvas(style: model.settings.style, palette: model.settings.palette,
-                             analyzer: model.analyzer, playing: model.isPlaying,
+                             analyzer: model.analyzer, playing: model.visualAudioActive,
                              reactive: model.visualsReactive, settings: model.settings, paused: model.motionPaused, clock: clock)
                 .equatable()
                 .ignoresSafeArea().contentShape(Rectangle()).onTapGesture { showControls.toggle() }

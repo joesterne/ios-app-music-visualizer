@@ -21,7 +21,7 @@ struct SourceSheet: View {
                                 VStack(alignment: .leading, spacing: 9) {
                                     Image(systemName: source.symbol).font(.system(size: 22, weight: .light))
                                     Text(source.title).font(.system(size: 12, weight: .medium))
-                                    Text(source.reactive ? "AUDIO REACTIVE" : "AMBIENT").font(.system(size: 8, design: .monospaced)).tracking(1)
+                                    Text(source.reactive || (source == model.source && model.microphoneResponseActive) ? "AUDIO REACTIVE" : "AMBIENT").font(.system(size: 8, design: .monospaced)).tracking(1)
                                         .foregroundStyle(StudioTheme.muted)
                                 }.frame(maxWidth: .infinity, minHeight: 85, alignment: .leading).padding(16)
                                     .background(model.source == source ? model.settings.palette.accent.opacity(0.12) : StudioTheme.panel,
@@ -32,6 +32,7 @@ struct SourceSheet: View {
                     }
                     if model.busy { ProgressView("Preparing audio…").frame(maxWidth: .infinity) }
                     Text(model.source.detail).font(.system(size: 13)).foregroundStyle(StudioTheme.muted)
+                    if model.supportsMicrophoneResponse { measuredAudioControls }
                     sourceDetail
                 }.padding(24)
             }
@@ -90,12 +91,12 @@ struct SourceSheet: View {
             AppleMusicPanel(service: model.apple)
         case .spotify:
             VStack(alignment: .leading, spacing: 16) {
-                Text("Your Spotify session stays in Spotify. Start your music there, return to Afterglow, and choose a visual. The animation runs independently of the track.")
+                Text("Your Spotify session stays in Spotify. Start your music there, return to Afterglow, and choose a visual. Enable microphone response above for sound played through speakers.")
                     .font(.system(size: 13)).foregroundStyle(StudioTheme.muted)
                 Button { if let spotifyURL = URL(string: "https://open.spotify.com/") { openURL(spotifyURL) } } label: {
                     Label("Open Spotify", systemImage: "arrow.up.right")
                 }.buttonStyle(.borderedProminent)
-                Text("No Spotify login, playback control, or audio analysis is performed by this companion mode.")
+                Text("Spotify audio is measured only when you enable a microphone or Mac system audio input.")
                     .font(.system(size: 11)).foregroundStyle(StudioTheme.muted)
             }
         case .other:
@@ -134,6 +135,30 @@ struct SourceSheet: View {
                 Button("Explore visualizers") { dismiss() }.buttonStyle(.borderedProminent)
             }
         }
+    }
+    private var measuredAudioControls: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("React to music levels").font(.headline)
+            Text("For equalizer-style response, play music through speakers and enable the microphone. This measures sound in the room, including other sounds. It cannot hear music playing only in headphones. No recording is saved.")
+                .font(.caption).foregroundStyle(StudioTheme.muted)
+            Button { Task { await model.toggleMicrophoneResponse() } } label: {
+                Label(model.microphoneResponseActive ? "Stop microphone response" : "React through microphone",
+                      systemImage: model.microphoneResponseActive ? "mic.slash" : "mic.fill")
+            }.buttonStyle(.borderedProminent).disabled(model.busy)
+            if model.microphoneResponseActive {
+                LiveLevelMeter(analyzer: model.analyzer, playing: model.visualAudioActive)
+                Text(model.settings.audioReactive ? "Listening • choose Spectrum or Stereo to see frequency levels." : "Listening • enable React to audio to use these levels in the visualizer.")
+                    .font(.caption).foregroundStyle(StudioTheme.muted)
+            }
+            #if os(macOS)
+            if model.source != .appleMusic {
+                Button("Use Mac system audio instead") { Task { await model.changeSource(.systemAudio) } }
+                    .buttonStyle(.bordered).disabled(model.busy)
+                Text("Captures permitted audio from other Mac apps, including headphone playback. Protected audio may be silent.")
+                    .font(.caption).foregroundStyle(StudioTheme.muted)
+            }
+            #endif
+        }.padding(16).background(StudioTheme.panel, in: RoundedRectangle(cornerRadius: 12))
     }
     private var captureButton: some View {
         Button { Task { await model.togglePlayback() } } label: {
@@ -177,7 +202,7 @@ private struct AppleMusicPanel: View {
                 HStack {
                     Text(query.isEmpty ? "YOUR LIBRARY" : "CATALOG • TOP 25").font(.system(size: 9, design: .monospaced)).tracking(1.5)
                     Spacer()
-                    Button("Disconnect") { service.clearSession() }.font(.system(size: 11))
+                    Button("Disconnect") { model.disconnectAppleMusic() }.font(.system(size: 11))
                         .disabled(model.busy || service.busy)
                 }
                 if service.busy { ProgressView() }
@@ -209,7 +234,7 @@ private struct AppleMusicPanel: View {
                     Button("Dismiss message") { service.error = nil }.buttonStyle(.bordered)
                 }.accessibilityElement(children: .contain)
             }
-            Text("Apple Music playback uses ambient visuals. MusicKit does not provide PCM samples to this app’s analyzer.")
+            Text("Enable microphone response above to measure speaker audio. MusicKit playback alone does not supply frequency or loudness data.")
                 .font(.system(size: 11)).foregroundStyle(StudioTheme.muted)
         }
         .task(id: query) {
